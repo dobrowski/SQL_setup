@@ -1,6 +1,8 @@
 
 
+library(tidyverse)
 library(vroom)
+library(here)
 
 
 import_files <- function(dir,globy,naming){
@@ -153,6 +155,74 @@ susp <- susp  %>%
 copy_to(con, susp, name = "SUSP",  temporary = FALSE)
 
 
+
+
+
+####  4 year adjusted grad cohort  -----
+# https://www.cde.ca.gov/ds/sd/sd/filesacgr.asp
+
+grad4 <- import_files(here("data","grad4"),"cohort*txt","none") 
+
+grad4 <- grad4  %>% mutate_at(vars(CohortStudents:Still_Enrolled_Rate), funs(as.numeric) ) 
+
+gradhead <- head(grad4, 200000)
+
+copy_to(con, grad4, name = "GRAD_FOUR",  temporary = FALSE, overwrite = TRUE)
+
+
+tbl(con,"GRAD_FOUR") %>%
+    count()
+
+
+tbl(con,"GRAD_FOUR") %>%
+    count()
+
+
+####  5 year adjusted grad cohort  -----
+# https://www.cde.ca.gov/ds/sd/sd/filesfycgr.asp
+
+grad5 <- import_files(here("data","grad5"),"cohort*txt","none") 
+
+grad5 <- grad5  %>% mutate_at(vars(Cohort_Students:Dropout_Rate), funs(as.numeric) ) 
+
+copy_to(con, grad5, name = "GRAD_FIVE",  temporary = FALSE, overwrite = TRUE)
+
+
+tbl(con,"GRAD_FIVE") %>%
+    count()
+
+
+
+####  Reclassification  -----  Not finished
+# https://www.cde.ca.gov/ds/sd/sd/filesreclass.asp
+
+reclass <- import_files(here("data","reclass"),"files*txt","none") 
+
+
+copy_to(con, reclass, name = "RECLASS",  temporary = FALSE, overwrite = TRUE)
+
+
+tbl(con,"RECLASS") %>%
+    count()
+
+
+
+
+####  Chronic Absenteeism  -----  
+# https://www.cde.ca.gov/ds/sd/sd/filesabd.asp
+
+chronic <- import_files(here("data","chronic"),"chr*txt","none") 
+
+chronic <- chronic  %>% 
+    mutate_at(vars(CumulativeEnrollment:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
+    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
+
+
+copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
+
+
+tbl(con,"CHRONIC") %>%
+    count()
 
 
 
