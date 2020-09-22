@@ -13,6 +13,7 @@ codebook <- read_sheet("https://docs.google.com/spreadsheets/d/1_EmvLQq-cUe8Ist_
 
 
 codebook2 <- codebook %>%
-    mutate(length = str_count(definition))
+    mutate(length = str_count(definition)) %>%
+    filter(length > 250)
 
 copy_to(con, codebook, name = "CODEBOOK",  temporary = FALSE, overwrite = TRUE)

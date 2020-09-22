@@ -3,6 +3,7 @@
 library(tidyverse)
 library(vroom)
 library(here)
+library(readxl)
 
 
 import_files <- function(dir,globy,naming){
@@ -48,7 +49,6 @@ copy_to(con, elas, name = "ELAS",  temporary = FALSE)
 # https://www.cde.ca.gov/ds/sd/sd/filessp.asp
 
 
-library(readxl)
 
 setwd(here("data","frpm"))
 
@@ -193,7 +193,7 @@ tbl(con,"GRAD_FIVE") %>%
 
 
 
-####  Reclassification  -----  Not finished
+####  Reclassification  -----  
 # https://www.cde.ca.gov/ds/sd/sd/filesreclass.asp
 
 reclass <- import_files(here("data","reclass"),"files*txt","none") 
@@ -223,6 +223,401 @@ copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
 
 tbl(con,"CHRONIC") %>%
     count()
+
+
+
+
+
+
+####  Staff Assign  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+staff <- import_files(here("data","staff"),"Staff*zip","none") 
+
+staff <- staff %>% 
+    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, staff, name = "STAFF",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Course Enroll  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+courseenroll <- import_files(here("data","staff"),"CourseE*zip","none") 
+
+courseenroll <- courseenroll %>% 
+    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, courseenroll, name = "COURSEENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
+temp <- courseenroll[2792148,]
+
+
+tbl(con,"CLASSENROLL") %>%
+    count()
+
+
+
+####  Course Taught  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+coursetaught <- import_files(here("data","staff"),"CoursesT*zip","none") 
+
+coursetaught <- coursetaught %>% 
+    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, coursetaught, name = "COURSETAUGHT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Class Enroll  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+classenroll <- import_files(here("data","staff"),"Class*zip","none") 
+
+classenroll <- classenroll %>% 
+    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+           ClassID    = iconv(enc2utf8(ClassID),sub="byte"),
+           AcademicYear = if_else(is.na(AcademicYear),academicyear,AcademicYear)
+           ) %>%
+    select(-academicyear)
+
+copy_to(con, classenroll, name = "CLASSENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
+####  Staff Assignment Codebook  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+codebook_assignment <- read_excel(here("data","staff","AssignmentCodes12On.xlsx") ) 
+    
+copy_to(con, codebook_assignment, name = "CODEBOOK_ASSIGNMENT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  SAT  -----   
+# https://www.cde.ca.gov/ds/sp/ai/   
+
+setwd(here("data","sat"))
+
+files <- fs::dir_ls(glob = "sat*txt")
+
+print(files)
+
+sat <- map_df(files, ~vroom(.x, .name_repair = ~ janitor::make_clean_names(.,replace = c("_" = "" ) ,case = "snake"), id = "id"))
+
+setwd(here())
+
+
+
+sat <- sat %>%
+    mutate_at(vars(enroll12:pctbothbenchmark), funs(as.numeric) ) %>%
+    mutate_at(vars(numtsttakr12: pctbothbenchmark11), funs(as.numeric) ) %>%
+    mutate(year = if_else(is.na(year),"2016-17",year))
+
+    
+
+copy_to(con, sat, name = "SAT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  ACT  -----  
+# https://www.cde.ca.gov/ds/sp/ai/
+
+
+setwd(here("data","act"))
+
+files <- fs::dir_ls(glob = "act*txt")
+
+print(files)
+
+act <- map_df(files, ~vroom(.x, .name_repair = ~ janitor::make_clean_names(.,replace = c("_" = "" ) ,case = "snake"), id = "id"))
+
+setwd(here())
+
+
+act <- act %>%
+    mutate_at(vars(enroll12:pctge21), funs(as.numeric) ) %>%
+    mutate(year = if_else(is.na(year),"2016-17",year))
+    
+copy_to(con, act, name = "ACT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  AP  -----  
+# https://www.cde.ca.gov/ds/sp/ai/
+
+
+setwd(here("data","ap"))
+
+files <- fs::dir_ls(glob = "ap*txt")
+
+print(files)
+
+ap <- map_df(files, ~vroom(.x, .name_repair = ~ janitor::make_clean_names(.,replace = c("_" = "" ) ,case = "snake"), id = "id"))
+
+setwd(here())
+
+
+ap <- ap %>%
+    mutate_at(vars(enroll1012:numscr5), funs(as.numeric) ) %>%
+    mutate(year = if_else(is.na(year),"2016-17",year),
+           dcode = if_else(is.na(dcode),cdcode,dcode),
+           studentgroup = if_else(is.na(studentgroup),"ALL" ,studentgroup)) %>%
+    select(-cdcode)
+
+copy_to(con, ap, name = "AP",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Dashboard  CCI -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+setwd(here("data","dash"))
+
+files <- fs::dir_ls(glob = "cci*txt")
+
+print(files)
+
+dash_cci <- map_df(files,
+                   ~vroom(.x,
+                          col_types = c(reportingyear = "c") ,
+                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          id = "id"))
+
+setwd(here())
+
+
+copy_to(con, dash_cci, name = "DASH_CCI",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+
+####  Dashboard  Census Enrollment -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+dash_census <- import_files(here("data","dash"),"cen*txt","none") 
+
+copy_to(con, dash_census, name = "DASH_CENSUS",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Dashboard Chronic Absenteeism -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+dash_chronic <- import_files(here("data","dash"),"chr*txt","none") 
+
+
+dash_chronic <- dash_chronic %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+copy_to(con, dash_chronic, name = "DASH_CHRONIC",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Dashboard ELA -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+setwd(here("data","dash"))
+
+files <- fs::dir_ls(glob = "ela*txt")
+
+print(files)
+
+dash_ela <- map_df(files[1:4],
+                   ~vroom(.x,
+                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          id = "id"))
+
+setwd(here())
+
+dash_ela <- dash_ela %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
+    mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
+    select(-ReportingYear)
+
+
+
+
+copy_to(con, dash_ela, name = "DASH_ELA",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Dashboard ELA Participation -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+dash_ela_part <- import_files(here("data","dash"),"elap*txt","none") 
+
+
+dash_ela_part <- dash_ela_part %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Dashboard Grad -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+setwd(here("data","dash"))
+
+files <- fs::dir_ls(glob = "grad*txt")
+
+print(files)
+
+dash_grad <- map_df(files,
+                   ~vroom(.x,
+                          col_types = c(reportingyear = "c") ,
+                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          id = "id"))
+
+setwd(here())
+
+
+
+
+dash_grad <- dash_grad %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+copy_to(con, dash_grad, name = "DASH_GRAD",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Dashboard Math -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+setwd(here("data","dash"))
+
+files <- fs::dir_ls(glob = "math*txt")
+
+print(files)
+
+dash_math <- map_df(files[1:4],
+                   ~vroom(.x,
+                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          id = "id"))
+
+setwd(here())
+
+dash_math <- dash_math %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
+    mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
+    select(-ReportingYear)
+
+
+
+
+copy_to(con, dash_math, name = "DASH_MATH",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Dashboard Math Participation -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+
+dash_math_part <- import_files(here("data","dash"),"mathp*txt","none") 
+
+
+dash_math_part <- dash_math_part %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+copy_to(con, dash_math_part, name = "DASH_MATH_PART",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Dashboard Local Priorities -----  
+#  SKipping for now.  Files to variable
+
+# 
+# local <- import_files(here("data","dash"),"Local*txt","none") 
+# 
+# pr <- import_files(here("data","dash"),"Pr*txt","none") 
+# setwd(here("data","dash"))
+# 
+# files <- fs::dir_ls(glob = "Pr*txt")
+# 
+# print(files)
+# 
+# pr <- map_df(files,
+#                     ~read_delim(.x,
+#                            col_types = c(CDSCode = "c",
+#                                          priority_number = "c",
+#                                          priorityNumber = "c",
+#                                          meetingDate = "D",
+#                                          meeting_date = "D",
+#                                          year = "d",
+#                                          ActivityGroupNeeds = "c",
+#                                          ActivityIndividualNeeds = "c",
+#                                          ActivitySupport = "c" ,
+#                                             activity_group_needs = "c",
+#                                          activity_individual_needs = "c",
+#                                          activity_support = "c") ,
+#   #                         .name_repair = ~ janitor::make_clean_names(., case = "none"),
+#                            delim = "|",
+#                            # id = "id"
+#   ))
+# 
+# setwd(here())
+# 
+# 
+# pr2 <- pr %>%
+#     clean_names()
+# 
+# 
+# pr3 <- pr2 %>%
+#     unite("cds_code", c(cds_code,cds_code_2), na.rm = TRUE, remove = TRUE) %>%
+#     unite("lea", c(lea,lea_2), na.rm = TRUE, remove = TRUE) %>%
+#     unite("priority_number", c(priority_number,priority_number_2), na.rm = TRUE, remove = TRUE) %>%
+#     unite("year", c(school_year,year, year_2), na.rm = TRUE, remove = TRUE) %>%
+#     unite("performance", c(performance,performance_2), na.rm = TRUE, remove = TRUE) %>%
+#     unite("policy_dev", c(policy_dev,policy_dev_2), na.rm = TRUE, remove = TRUE)
+#     
+
+
+
+####  Dashboard Suspension -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+setwd(here("data","dash"))
+files <- fs::dir_ls(glob = "susp*txt")
+print(files)
+dash_susp <- map_df(files,
+                    ~vroom(.x,
+                           col_types = c(reportingyear = "c") ,
+                           .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                           id = "id"))
+setwd(here())
+
+
+
+dash_susp <- dash_susp %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+copy_to(con, dash_susp, name = "DASH_SUSP",  temporary = FALSE, overwrite = TRUE)
+
+
 
 
 

@@ -18,6 +18,11 @@ con <- dbConnect(odbc(),
 
 
 
+# db_drop_table(con, "TEST_TABLE")
+
+
+
+
 
 headenr <- tbl(con, "ENROLLMENT") %>% 
     filter(ETHNIC == 6) %>%
