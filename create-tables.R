@@ -620,4 +620,85 @@ copy_to(con, dash_susp, name = "DASH_SUSP",  temporary = FALSE, overwrite = TRUE
 
 
 
+####  CAASPP -----  
+# https://caaspp-elpac.cde.ca.gov/caaspp/ResearchFileList?ps=true&lstTestType=B&lstTestYear=2015&lstCounty=00&lstCntyNam=Select%20County...&lstFocus=btnApplySelections
+
+
+setwd(here("data","caaspp"))
+files <- fs::dir_ls(glob = "sb*txt")
+print(files)
+caaspp <- map_df(files,
+                    ~vroom(.x,
+                           col_types = c("Total Tested At Entity Level" = "c",
+                                         "CAASPP Reported Enrollment" = "c",
+                                         "Students Tested" = "c",
+                                         "Students with Scores" = "c",
+                                         "Total Tested with Scores" = "c") ,
+                           .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                            id = "id"
+  ))
+setwd(here())
+
+
+copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Initial ELPAC -----  
+# https://caaspp-elpac.cde.ca.gov/elpac/ResearchFilesIA?ps=true&lstTestYear=2019&lstTestType=IA&lstGroup=1&lstSubGroup=001&lstGrade=13&lstCounty=00&lstDistrict=00000&lstSchool=0000000#dl
+
+
+
+
+setwd(here("data","elpac"))
+files <- fs::dir_ls(glob = "ia*zip")
+print(files)
+ielpac <- map_df(files,
+                 ~vroom(.x,
+                        delim = "^",
+                        .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                        id = "id"
+                 ))
+setwd(here())
+
+
+ielpac <- ielpac %>% 
+  mutate_at(vars(TotalEnrolled:TotalTestedWithScores,OverallMeanSclScr:WritLangTotal), funs(as.numeric) ) 
+
+
+copy_to(con, ielpac, name = "IELPAC",  temporary = FALSE, overwrite = TRUE)
+
+
+
+###  Summative ELPAC -----  
+# https://caaspp-elpac.cde.ca.gov/elpac/ResearchFilesSA?ps=true&lstTestYear=2019&lstTestType=SA&lstGroup=1&lstSubGroup=001&lstGrade=13&lstCounty=00&lstDistrict=00000&lstSchool=0000000#dl
+
+
+carotfile <- read_delim(here("data","elpac","sa_elpac2019_all_csv_v2.zip"),
+                        delim = "^")
+write_delim(carotfile,
+            here("data","elpac","sa_elpac2019_all_csv_v2carot.txt"),
+            delim = ",")
+
+
+setwd(here("data","elpac"))
+files <- fs::dir_ls(glob = "sa*txt")
+print(files)
+selpac <- map_df(files,
+                 ~vroom(.x,
+                        delim = ",",
+                        .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                        id = "id"
+                 ))
+setwd(here())
+
+
+selpac <- selpac %>% 
+  mutate_at(vars(TotalEnrolled:TotalTested,OverallMeanSclScr:TotalTestedWithScores), funs(as.numeric) ) 
+
+
+copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
+
+
+
 
