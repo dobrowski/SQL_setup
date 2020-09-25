@@ -54,5 +54,5 @@ get_column_names_into_sheet <- function(col){
 }
 
 
-get_column_names_into_sheet("CAST")
+get_column_names_into_sheet("DASH_CCI")
 

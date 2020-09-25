@@ -706,24 +706,16 @@ copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
 
 
 
+cast <- import_files(here("data","cast"),"cast*txt","none") 
 
 
-setwd(here("data","cast"))
-files <- fs::dir_ls(glob = "sb*txt")
-print(files)
-caaspp <- map_df(files,
-                 ~vroom(.x,
-                        col_types = c("Total Tested At Entity Level" = "c",
-                                      "CAASPP Reported Enrollment" = "c",
-                                      "Students Tested" = "c",
-                                      "Students with Scores" = "c",
-                                      "Total Tested with Scores" = "c") ,
-                        .name_repair = ~ janitor::make_clean_names(., case = "none"),
-                        id = "id"
-                 ))
-setwd(here())
+cast <- cast %>% 
+  mutate_at(vars(Total_Number_Tested_at_Entity_Level_and_Demographic,
+                 Total_Number_Tested_at_this_Demographic_with_Valid_Scores,
+                 CAST_Reported_Enrollment:Earth_and_Space_Sciences_Domain_Percent_Above_Standard),
+            funs(as.numeric) ) 
 
 
-copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+copy_to(con, cast, name = "CAST",  temporary = FALSE, overwrite = TRUE)
 
 
