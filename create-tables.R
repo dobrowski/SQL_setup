@@ -719,3 +719,15 @@ cast <- cast %>%
 copy_to(con, cast, name = "CAST",  temporary = FALSE, overwrite = TRUE)
 
 
+####  TK -----  
+# https://www.cde.ca.gov/ds/sd/sd/filestkdata.asp
+
+
+tk <- import_files(here("data","tk"),"tk*txt","none") 
+
+
+tk <- tk %>%
+  rename(id = YEAR)
+
+copy_to(con, tk, name = "TK",  temporary = FALSE, overwrite = TRUE)
+
