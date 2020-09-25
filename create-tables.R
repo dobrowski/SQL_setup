@@ -701,4 +701,29 @@ copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
 
 
 
+####  CAST -----  
+# https://caaspp-elpac.cde.ca.gov/caaspp/ResearchFileListCAST?ps=true&lstTestYear=2019&lstTestType=X&lstGroup=1&lstGrade=13&lstSchoolType=A&lstCounty=00&lstDistrict=00000&lstSchool=0000000#dl
+
+
+
+
+
+setwd(here("data","cast"))
+files <- fs::dir_ls(glob = "sb*txt")
+print(files)
+caaspp <- map_df(files,
+                 ~vroom(.x,
+                        col_types = c("Total Tested At Entity Level" = "c",
+                                      "CAASPP Reported Enrollment" = "c",
+                                      "Students Tested" = "c",
+                                      "Students with Scores" = "c",
+                                      "Total Tested with Scores" = "c") ,
+                        .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                        id = "id"
+                 ))
+setwd(here())
+
+
+copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+
 
