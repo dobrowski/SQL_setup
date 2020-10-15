@@ -18,7 +18,7 @@ con <- dbConnect(odbc(),
 
 
 
-# db_drop_table(con, "TEST_TABLE")
+# db_drop_table(con, "COURSETAUGHT")
 
 
 

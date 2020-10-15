@@ -229,82 +229,6 @@ tbl(con,"CHRONIC") %>%
 
 
 
-####  Staff Assign  -----  
-# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
-
-staff <- import_files(here("data","staff"),"Staff*zip","none") 
-
-staff <- staff %>% 
-    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
-           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
-
-copy_to(con, staff, name = "STAFF",  temporary = FALSE, overwrite = TRUE)
-
-
-
-
-####  Course Enroll  -----  
-# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
-
-courseenroll <- import_files(here("data","staff"),"CourseE*zip","none") 
-
-courseenroll <- courseenroll %>% 
-    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
-           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
-
-copy_to(con, courseenroll, name = "COURSEENROLL",  temporary = FALSE, overwrite = TRUE)
-
-
-temp <- courseenroll[2792148,]
-
-
-tbl(con,"CLASSENROLL") %>%
-    count()
-
-
-
-####  Course Taught  -----  
-# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
-
-coursetaught <- import_files(here("data","staff"),"CoursesT*zip","none") 
-
-coursetaught <- coursetaught %>% 
-    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
-           ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
-
-copy_to(con, coursetaught, name = "COURSETAUGHT",  temporary = FALSE, overwrite = TRUE)
-
-
-
-####  Class Enroll  -----  
-# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
-
-classenroll <- import_files(here("data","staff"),"Class*zip","none") 
-
-classenroll <- classenroll %>% 
-    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
-           ClassID    = iconv(enc2utf8(ClassID),sub="byte"),
-           AcademicYear = if_else(is.na(AcademicYear),academicyear,AcademicYear)
-           ) %>%
-    select(-academicyear)
-
-copy_to(con, classenroll, name = "CLASSENROLL",  temporary = FALSE, overwrite = TRUE)
-
-
-####  Staff Assignment Codebook  -----  
-# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
-
-codebook_assignment <- read_excel(here("data","staff","AssignmentCodes12On.xlsx") ) 
-    
-copy_to(con, codebook_assignment, name = "CODEBOOK_ASSIGNMENT",  temporary = FALSE, overwrite = TRUE)
-
-
-
 
 ####  SAT  -----   
 # https://www.cde.ca.gov/ds/sp/ai/   
@@ -731,3 +655,212 @@ tk <- tk %>%
 
 copy_to(con, tk, name = "TK",  temporary = FALSE, overwrite = TRUE)
 
+
+
+
+####  Cost -----  
+# https://www.cde.ca.gov/ds/fd/ec/currentexpense.asp
+
+
+setwd(here("data","cost"))
+files <- fs::dir_ls( glob = "cur*")
+cost <- sapply(files,
+               read_excel,
+               sheet = 1,
+               col_names = c("CountyCode","DistrictCode","DistrictName","EDP365", "CurrentExpenseADA","CurrentExpensePerADA","LEAType"),
+               simplify=FALSE
+) %>% 
+  bind_rows(.id = "id")
+setwd(here())
+
+cost <- cost %>%
+  filter(!is.na(DistrictCode),
+         !str_detect(CountyCode, "CO"),
+         !str_detect(CountyCode, ":"),
+        ) %>%
+  mutate(Year = str_extract(id,"[:digit:]+"))
+  
+copy_to(con, cost, name = "COST",  temporary = FALSE, overwrite = TRUE)
+
+
+####  Staff Demo -----  
+# https://www.cde.ca.gov/ds/sd/df/filesstaffdemo.asp
+
+
+staffdemo <- import_files(here("data","staff"),"StaffDemo*txt","none") 
+
+
+staffdemo <- staffdemo %>%
+  mutate(Age = if_else(is.na(Age),age,Age)) %>%
+  select(-age)
+
+copy_to(con, staffdemo, name = "STAFF_DEMO",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Staff Cred -----  
+# https://www.cde.ca.gov/ds/sd/df/filesstaffdemo.asp
+
+
+staffcred <- import_files(here("data","staff"),"StaffCred*txt","none") 
+
+copy_to(con, staffcred, name = "STAFF_CRED",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Staff School FTE -----  
+# https://www.cde.ca.gov/ds/sd/df/filesstaffdemo.asp
+
+
+staffsch <- import_files(here("data","staff"),"StaffSch*txt","none") 
+
+staffsch <- staffsch %>%
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
+
+
+copy_to(con, staffsch, name = "STAFF_SCHOOL_FTE",  temporary = FALSE, overwrite = TRUE)
+
+####  Staff Assign  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+staff <- import_files(here("data","staff"),"Staff*zip","none") 
+
+staff <- staff %>% 
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+         ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, staff, name = "STAFF_ASSIGN",  temporary = FALSE, overwrite = TRUE)
+
+
+####  Staff Classified  -----  
+# https://www.cde.ca.gov/ds/sd/sd/filescbedsoraa.asp
+
+
+staff.classified <- import_files(here("data","staff"),"cbe*txt","none") 
+
+staff.classified <- staff.classified %>% 
+  mutate(Male = if_else(str_detect(Description, "Male"),Total,0),
+         Female = if_else(str_detect(Description, "Female"),Total,0),
+         Para = if_else(str_detect(Description, "Para"),Total,0),
+         Clerical = if_else(str_detect(Description, "Clerical"),Total,0),
+         Class = if_else(str_detect(Description, "Class"),Total,0),
+         id = YEAR
+  ) %>%
+  select(-YEAR)
+
+
+
+copy_to(con, staff.classified, name = "STAFF_CLASSIFIED",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+####  Course Enroll  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+courseenroll <- import_files(here("data","staff"),"CourseE*zip","none") 
+
+courseenroll <- courseenroll %>% 
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+         ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Course Taught  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+coursetaught <- import_files(here("data","staff"),"CoursesT*zip","none") 
+
+coursetaught <- coursetaught %>% 
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+         ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, coursetaught, name = "STAFF_COURSETAUGHT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+####  Class Enroll  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+classenroll <- import_files(here("data","staff"),"Class*zip","none") 
+
+classenroll <- classenroll %>% 
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+         ClassID    = iconv(enc2utf8(ClassID),sub="byte"),
+         AcademicYear = if_else(is.na(AcademicYear),academicyear,AcademicYear)
+  ) %>%
+  select(-academicyear)
+
+copy_to(con, classenroll, name = "CLASSENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
+####  Staff Assignment Codebook  -----  
+# https://www.cde.ca.gov/ds/sd/df/filesassign.asp
+
+
+codebook_assignment <- read_excel(here("data","staff","AssignmentCodes12On.xlsx") ) 
+
+copy_to(con, codebook_assignment, name = "CODEBOOK_ASSIGNMENT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+
+####  SARC Average Class Size  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+classsize <- import_files(here("data","sarc"),"acs*txt","none") 
+
+copy_to(con, classsize, name = "SARC_CLASSSIZE",  temporary = FALSE, overwrite = TRUE)
+
+
+####  SARC Expenditures  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+expend <- import_files(here("data","sarc"),"expend*txt","none") 
+
+copy_to(con, expend, name = "SARC_EXPEND",  temporary = FALSE, overwrite = TRUE)
+
+
+####  SARC Salary  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+salary <- import_files(here("data","sarc"),"sala*txt","none") 
+
+copy_to(con, salary, name = "SARC_SALARY",  temporary = FALSE, overwrite = TRUE)
+
+
+####  SARC AP  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+sarcAP <- import_files(here("data","sarc"),"apcrs*txt","none") 
+
+copy_to(con, sarcAP, name = "SARC_AP",  temporary = FALSE, overwrite = TRUE)
+
+
+####  SARC Counselors  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+counselors <- import_files(here("data","sarc"),"rac*txt","none") 
+
+copy_to(con, counselors, name = "SARC_COUNSELOR",  temporary = FALSE, overwrite = TRUE)
+
+
+####  SARC Student Support  -----  
+# https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
+
+stud.support <- import_files(here("data","sarc"),"stu*txt","none") 
+
+copy_to(con, stud.support, name = "SARC_STUDENT_SUPPORT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+
+#### End --------
