@@ -18,7 +18,7 @@ con <- dbConnect(odbc(),
 
 
 
-# db_drop_table(con, "COURSETAUGHT")
+# db_drop_table(con, "CLASSENROLL")
 
 
 

@@ -756,7 +756,7 @@ copy_to(con, staff.classified, name = "STAFF_CLASSIFIED",  temporary = FALSE, ov
 
 
 
-####  Course Enroll  -----  
+#### Staff Course Enroll  -----  
 # https://www.cde.ca.gov/ds/sd/df/filesassign.asp
 
 
@@ -770,7 +770,7 @@ copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, over
 
 
 
-####  Course Taught  -----  
+#### Staff Course Taught  -----  
 # https://www.cde.ca.gov/ds/sd/df/filesassign.asp
 
 
@@ -797,7 +797,7 @@ classenroll <- classenroll %>%
   ) %>%
   select(-academicyear)
 
-copy_to(con, classenroll, name = "CLASSENROLL",  temporary = FALSE, overwrite = TRUE)
+copy_to(con, classenroll, name = "STAFF_CLASSENROLL",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  Staff Assignment Codebook  -----  
