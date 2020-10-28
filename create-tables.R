@@ -82,34 +82,21 @@ setwd(here("data","upc"))
 
 files <- fs::dir_ls( glob = "cupc*")
 
-upc1 <- sapply(files,
+upc <- sapply(files,
                read_excel,
                sheet = 3,
                skip =1  ,
                .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                simplify=FALSE
                ) %>% 
-    bind_rows(.id = "id")
+    bind_rows(.id = "id")  %>%
+  mutate(across(school_type:high_grade, na_if, "N/A"))
 
-
-
-upc2 <- sapply(files,
-               read_excel,
-               sheet = 3,
-               skip =1  ,
-               .name_repair = ~ janitor::make_clean_names(., case = "snake"),
-               simplify=FALSE
-               ) %>% 
-    bind_rows(.id = "id")
-
-upc <- upc1 %>%
-    bind_rows(upc2) %>%
-    mutate(across(school_type:high_grade, na_if, "N/A"))
 
 setwd(here())
 
 
-copy_to(con, upc, name = "UPC",  temporary = FALSE)
+copy_to(con, upc, name = "UPC",  temporary = FALSE, overwrite = TRUE)
 
 
 
