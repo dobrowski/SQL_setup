@@ -121,9 +121,10 @@ exp <- exp %>%
     mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn)) %>%
     select(-charter_y_n) %>%
     mutate(charter_yn = recode(charter_yn, Y = "Yes", N = "No")) %>%
-    mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
+    mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
+  mutate_at(vars(cumulative_enrollment:expulsion_count_other_reasons,expulsion_count_defiance_only), funs(as.numeric) )
 
-copy_to(con, exp, name = "EXP",  temporary = FALSE)
+copy_to(con, exp, name = "EXP",  temporary = FALSE, overwrite = TRUE)
 
 
 
@@ -137,9 +138,11 @@ susp <- susp  %>%
     mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn)) %>%
     select(-charter_y_n) %>%
     mutate(charter_yn = recode(charter_yn, Y = "Yes", N = "No")) %>%
-    mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
+    mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
+  mutate_at(vars(cumulative_enrollment:suspension_count_other_reasons,suspension_count_defiance_only), funs(as.numeric) )
 
-copy_to(con, susp, name = "SUSP",  temporary = FALSE)
+
+copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
 
 
 
