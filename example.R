@@ -17,3 +17,6 @@ headenr
 
 
 
+codebook.susp <- codebook %>% 
+    filter(table == "SUSP",
+           field_name == "reporting_category")

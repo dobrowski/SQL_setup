@@ -5,7 +5,6 @@ library(vroom)
 library(here)
 library(readxl)
 
-
 import_files <- function(dir,globy,naming){
     setwd(dir)
     
@@ -70,13 +69,10 @@ copy_to(con, frpm, name = "FRPM",  temporary = FALSE)
 
 
 
-
-
 ####  Unduplicated Pupil Count  ----
 # https://www.cde.ca.gov/ds/sd/sd/filescupc.asp
 
 
-library(readxl)
 
 setwd(here("data","upc"))
 
@@ -104,9 +100,11 @@ copy_to(con, upc, name = "UPC",  temporary = FALSE, overwrite = TRUE)
 ####  College Going Rate  -----
 # https://www.cde.ca.gov/ds/sd/sd/filescgr12.asp
 
-cgr <- import_files(here("data","cgr"),"cgr*txt","none") 
+cgr <- import_files(here("data","cgr"),"cgr*txt","none") %>%
+  mutate_at(vars(High_School_Completers:Enrolled_Out_of_State_2_Year_College_Public_Private_12_Months), funs(as.numeric) )
 
-copy_to(con, cgr, name = "CGR",  temporary = FALSE)
+
+copy_to(con, cgr, name = "CGR",  temporary = FALSE, overwrite = TRUE)
 
 
 
@@ -153,9 +151,10 @@ copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
 
 grad4 <- import_files(here("data","grad4"),"cohort*txt","none") 
 
-grad4 <- grad4  %>% mutate_at(vars(CohortStudents:Still_Enrolled_Rate), funs(as.numeric) ) 
+grad4 <- grad4  %>%
+  mutate_at(vars(CohortStudents:Still_Enrolled_Rate), funs(as.numeric) ) 
 
-gradhead <- head(grad4, 200000)
+
 
 copy_to(con, grad4, name = "GRAD_FOUR",  temporary = FALSE, overwrite = TRUE)
 
@@ -173,7 +172,8 @@ tbl(con,"GRAD_FOUR") %>%
 
 grad5 <- import_files(here("data","grad5"),"cohort*txt","none") 
 
-grad5 <- grad5  %>% mutate_at(vars(Cohort_Students:Dropout_Rate), funs(as.numeric) ) 
+grad5 <- grad5  %>%
+  mutate_at(vars(Cohort_Students:Dropout_Rate), funs(as.numeric) ) 
 
 copy_to(con, grad5, name = "GRAD_FIVE",  temporary = FALSE, overwrite = TRUE)
 
@@ -188,13 +188,7 @@ tbl(con,"GRAD_FIVE") %>%
 
 reclass <- import_files(here("data","reclass"),"files*txt","none") 
 
-
 copy_to(con, reclass, name = "RECLASS",  temporary = FALSE, overwrite = TRUE)
-
-
-tbl(con,"RECLASS") %>%
-    count()
-
 
 
 
@@ -209,14 +203,6 @@ chronic <- chronic  %>%
 
 
 copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
-
-
-tbl(con,"CHRONIC") %>%
-    count()
-
-
-
-
 
 
 
@@ -776,7 +762,7 @@ copy_to(con, coursetaught, name = "STAFF_COURSETAUGHT",  temporary = FALSE, over
 
 ####  Class Enroll  -----  
 # https://www.cde.ca.gov/ds/sd/df/filesassign.asp
-
+# Demographics by class
 
 classenroll <- import_files(here("data","staff"),"Class*zip","none") 
 
