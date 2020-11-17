@@ -554,6 +554,7 @@ setwd(here("data","elpac"))
 files <- fs::dir_ls(glob = "ia*zip")
 print(files)
 ielpac <- map_df(files,
+                 col_types = rep("c",35),
                  ~vroom(.x,
                         delim = "^",
                         .name_repair = ~ janitor::make_clean_names(., case = "none"),
@@ -834,6 +835,27 @@ copy_to(con, counselors, name = "SARC_COUNSELOR",  temporary = FALSE, overwrite 
 stud.support <- import_files(here("data","sarc"),"stu*txt","none") 
 
 copy_to(con, stud.support, name = "SARC_STUDENT_SUPPORT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+
+
+
+#### Absentee Reasons  -----  
+# https://www.cde.ca.gov/ds/sd/sd/filesabr.asp
+
+
+absent <- import_files(here("data","absent"),"ab*txt","none") 
+
+absent <- absent %>% 
+  mutate(School_Name = iconv(enc2utf8(School_Name),sub="byte"),
+     #    ClassID    = iconv(enc2utf8(ClassID),sub="byte")
+         ) %>%
+  mutate_at(vars(Eligible_Cumulative_Enrollment:Incomplete_Independent_Study_Absences_count), funs(as.numeric) )
+
+
+copy_to(con, absent, name = "ABSENT",  temporary = FALSE, overwrite = TRUE)
 
 
 
