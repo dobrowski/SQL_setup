@@ -551,12 +551,12 @@ copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
 
 
 setwd(here("data","elpac"))
-files <- fs::dir_ls(glob = "ia*zip")
+files <- fs::dir_ls(glob = "ia_elpac*zip")
 print(files)
 ielpac <- map_df(files,
-                 col_types = rep("c",35),
-                 ~vroom(.x,
+               ~vroom(.x,
                         delim = "^",
+                        col_types = str_flatten(rep("c",34)),
                         .name_repair = ~ janitor::make_clean_names(., case = "none"),
                         id = "id"
                  ))
