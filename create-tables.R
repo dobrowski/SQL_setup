@@ -163,10 +163,6 @@ tbl(con,"GRAD_FOUR") %>%
     count()
 
 
-tbl(con,"GRAD_FOUR") %>%
-    count()
-
-
 ####  5 year adjusted grad cohort  -----
 # https://www.cde.ca.gov/ds/sd/sd/filesfycgr.asp
 
@@ -857,7 +853,40 @@ absent <- absent %>%
 
 copy_to(con, absent, name = "ABSENT",  temporary = FALSE, overwrite = TRUE)
 
+### Restraint and Seculsion  -----  
+# https://www.cde.ca.gov/ds/sd/sd/filesrsd.asp
 
+
+
+setwd(here("data","dis"))
+
+files <- fs::dir_ls( glob = "rsd*")
+
+discipline <- sapply(files,
+               read_excel,
+               sheet = 2,
+               skip =1  ,
+               .name_repair = ~ janitor::make_clean_names(., case = "snake"),
+               simplify=FALSE
+) %>% 
+  bind_rows(.id = "id")
+
+setwd(here())
+
+
+discipline <- discipline %>% 
+  mutate(school_name = iconv(enc2utf8(school_name),sub="byte"),
+         #    ClassID    = iconv(enc2utf8(ClassID),sub="byte")
+  ) %>%
+  mutate_at(vars(count_of_mechanical_restraints:unduplicated_count_of_students_secluded), funs(as.numeric) )
+
+
+copy_to(con, discipline, name = "DISCIP",  temporary = FALSE, overwrite = TRUE)
+
+
+
+tbl(con,"DISCIP") %>%
+  count()
 
 
 
