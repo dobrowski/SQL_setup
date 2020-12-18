@@ -21,6 +21,8 @@ import_files <- function(dir,globy,naming){
 
 
 ####  Enrollment -----
+# https://www.cde.ca.gov/ds/sd/sd/filesenr.asp
+
 
 enr_vroom <- import_files(here("data","enrollment"),"enr*txt","none") 
 
