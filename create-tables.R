@@ -795,6 +795,12 @@ classsize <- import_files(here("data","sarc"),"acs*txt","none")
 copy_to(con, classsize, name = "SARC_CLASSSIZE",  temporary = FALSE, overwrite = TRUE)
 
 
+
+
+tbl(con,"SARC_CLASSSIZE") %>%
+  count()
+
+
 ####  SARC Expenditures  -----  
 # https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
 
@@ -814,7 +820,7 @@ copy_to(con, salary, name = "SARC_SALARY",  temporary = FALSE, overwrite = TRUE)
 ####  SARC AP  -----  
 # https://www.cde.ca.gov/ta/ac/sa/accessdata1819.asp
 
-sarcAP <- import_files(here("data","sarc"),"apcrs*txt","none") 
+sarcAP <- import_files(here("data","sarc"),"ap*txt","none") 
 
 copy_to(con, sarcAP, name = "SARC_AP",  temporary = FALSE, overwrite = TRUE)
 
