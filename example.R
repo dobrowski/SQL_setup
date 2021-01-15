@@ -8,9 +8,10 @@ con <- mcoe_sql_con()
 
 
 
-headenr <- tbl(con, "STAFF_ASSIGN") %>% 
+headenr <- tbl(con, "EXP") %>% 
 #    filter(ETHNIC == 6) %>%
-    head(20)
+    head(20) %>%
+    collect()
 
 headenr
 

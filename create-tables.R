@@ -373,6 +373,42 @@ copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrit
 
 
 
+####  Dashboard ELPI -----  
+# https://www.cde.ca.gov/ta/ac/cm/
+
+#  ELPI has been done differently every year, so it is not being included for now since the data files are inconsistent
+
+
+# dash_elpi <- import_files(here("data","dash"),"elpi*txt","none") 
+# 
+# 
+# 
+# setwd(here("data","dash"))
+# 
+# files <- fs::dir_ls(glob = "elpi*txt")
+# 
+# print(files)
+# 
+# dash_elpi <- map_df(files[1:4],
+#                    ~vroom(.x,
+#                           .name_repair = ~ janitor::make_clean_names(., case = "none"),
+#                           id = "id"))
+# 
+# setwd(here())
+# 
+# dash_ela <- dash_ela %>%
+#   mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
+#   mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
+#   select(-ReportingYear)
+# 
+# 
+# 
+# 
+# copy_to(con, dash_ela, name = "DASH_ELA",  temporary = FALSE, overwrite = TRUE)
+# 
+
+
+
 ####  Dashboard Grad -----  
 # https://www.cde.ca.gov/ta/ac/cm/
 
