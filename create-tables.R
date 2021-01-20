@@ -74,7 +74,7 @@ copy_to(con, frpm, name = "FRPM",  temporary = FALSE)
 ####  Unduplicated Pupil Count  ----
 # https://www.cde.ca.gov/ds/sd/sd/filescupc.asp
 
-
+#  Need to add the LEA level data too
 
 setwd(here("data","upc"))
 
@@ -379,6 +379,10 @@ copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrit
 #  ELPI has been done differently every year, so it is not being included for now since the data files are inconsistent
 
 
+dash_elpi <- vroom(here("data","dash","elpidownload2019.txt") ) %>%
+  mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+
 # dash_elpi <- import_files(here("data","dash"),"elpi*txt","none") 
 # 
 # 
@@ -403,11 +407,9 @@ copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrit
 # 
 # 
 # 
-# 
-# copy_to(con, dash_ela, name = "DASH_ELA",  temporary = FALSE, overwrite = TRUE)
-# 
-
-
+ 
+ copy_to(con, dash_elpi, name = "DASH_ELPI",  temporary = FALSE, overwrite = TRUE)
+ 
 
 ####  Dashboard Grad -----  
 # https://www.cde.ca.gov/ta/ac/cm/
