@@ -31,7 +31,26 @@ enr <- enr_vroom %>%
 
 
 
-copy_to(con, enr, name = "ENROLLMENT",  temporary = FALSE)
+copy_to(con, enr, name = "ENROLLMENT",  temporary = FALSE, overwrite = TRUE)
+
+
+
+#### Cumulative Enrollment -----
+# https://www.cde.ca.gov/ds/sd/sd/filesenrcum.asp
+
+
+
+cenr_vroom <- import_files(here("data","enrollment"),"cenr*txt","none") 
+
+cenr <- cenr_vroom %>%
+  mutate(YEAR = str_extract(YEAR,"\\d\\d")) %>%
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
+
+
+
+copy_to(con, cenr, name = "CENROLLMENT",  temporary = FALSE, overwrite = TRUE)
+
+
 
 
 ####  ELA Status and LTELS  -----
