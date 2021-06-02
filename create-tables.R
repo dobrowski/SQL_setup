@@ -674,6 +674,15 @@ cast <- cast %>%
 
 copy_to(con, cast, name = "CAST",  temporary = FALSE, overwrite = TRUE)
 
+####  EL Grade and Language -----
+
+
+el_lang <- import_files(here("data","el-lang"),"els*txt","none") 
+
+
+copy_to(con, el_lang, name = "EL_LANG",  temporary = FALSE, overwrite = TRUE)
+
+
 
 ####  TK -----  
 # https://www.cde.ca.gov/ds/sd/sd/filestkdata.asp
@@ -838,7 +847,7 @@ copy_to(con, classenroll, name = "STAFF_CLASSENROLL",  temporary = FALSE, overwr
 
 codebook_assignment <- read_excel(here("data","staff","AssignmentCodes12On.xlsx") ) 
 
-copy_to(con, codebook_assignment, name = "CODEBOOK_ASSIGNMENT",  temporary = FALSE, overwrite = TRUE)
+copy_to(con, codebook_assignment, name = "STAFF_ASSIGNMENT_CODEBOOK",  temporary = FALSE, overwrite = TRUE)
 
 
 
