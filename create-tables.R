@@ -675,7 +675,7 @@ cast <- cast %>%
 copy_to(con, cast, name = "CAST",  temporary = FALSE, overwrite = TRUE)
 
 ####  EL Grade and Language -----
-
+# https://www.cde.ca.gov/ds/ad/fileselsch.asp
 
 el_lang <- import_files(here("data","el-lang"),"els*txt","none") 
 
