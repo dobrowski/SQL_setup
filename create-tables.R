@@ -54,6 +54,7 @@ copy_to(con, cenr, name = "CENROLLMENT",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  ELA Status and LTELS  -----
+# https://www.cde.ca.gov/ds/ad/filesltel.asp
 
 elas_vroom <- import_files(here("data","elas"),"Lte*txt","none") 
 
@@ -961,6 +962,21 @@ copy_to(con, discipline, name = "DISCIP",  temporary = FALSE, overwrite = TRUE)
 
 tbl(con,"DISCIP") %>%
   count()
+
+
+
+
+### Growth  -----  
+# https:/
+
+
+
+growth <- import_files(here("data","growth"),"grow*txt","none") 
+
+copy_to(con, growth, name = "GROWTH",  temporary = FALSE, overwrite = TRUE)
+
+
+
 
 
 
