@@ -31,3 +31,11 @@ grad_four <- headenr  %>%
 codebook.susp <- codebook %>% 
     filter(table == "SUSP",
            field_name == "reporting_category") 
+
+
+
+
+
+
+growth.mry <- growth %>% 
+    filter( str_starts(cds, "27") )

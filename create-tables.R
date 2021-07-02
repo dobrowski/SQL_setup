@@ -979,5 +979,15 @@ copy_to(con, growth, name = "GROWTH",  temporary = FALSE, overwrite = TRUE)
 
 
 
+### Schools  -----  
+# https://www.cde.ca.gov/ds/si/ds/pubschls.asp
+
+
+schools <- import_files(here("data","schools"),"pub*txt","none") 
+
+copy_to(con, schools, name = "SCHOOLS",  temporary = FALSE, overwrite = TRUE)
+
+
+
 
 #### End --------
