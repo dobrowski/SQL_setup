@@ -967,15 +967,11 @@ tbl(con,"DISCIP") %>%
 
 
 ### Growth  -----  
-# https:/
-
-
+# https://www.cde.ca.gov/ta/ac/acctgrowthmod.asp
 
 growth <- import_files(here("data","growth"),"grow*txt","none") 
 
 copy_to(con, growth, name = "GROWTH",  temporary = FALSE, overwrite = TRUE)
-
-
 
 
 
@@ -987,12 +983,13 @@ schools <- import_files(here("data","schools"),"pub*txt","none")
 
 copy_to(con, schools, name = "SCHOOLS",  temporary = FALSE, overwrite = TRUE)
 
-
 ###  Dash all ----
 
 # Uses the old 2019 Dashboard code.  Needs to be revisited. 
 
 # Data compiled in Dashboard2019 project, DDashboard2019.R file
+options(scipen=999)
+
 
 dash_all <- readRDS(here("data","dash","Dashboard_all.rds")) %>%
   mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
@@ -1000,15 +997,14 @@ dash_all <- readRDS(here("data","dash","Dashboard_all.rds")) %>%
 
 copy_to(con, dash_all, name = "DASH_ALL",  temporary = FALSE, overwrite = TRUE)
 
-dash_all1 <- dash_all[1:250000,]
-dash_all2 <- dash_all[250001:500000,]
-dash_all3 <- dash_all[500001:1000000,]
-dash_all4 <- dash_all[1000001:1646388,]
 
-copy_to(con, dash_all1, name = "DASH_ALL",  temporary = FALSE, overwrite = TRUE)
-dbAppendTable(con, value =  dash_all2, name = "DASH_ALL")
+dash_all2 <- dash_all %>%
+  mutate(cds2 = as.numeric(cds))
 
 
+# The code below splits the really big file into smaller chunks 
+# because the SQL server was running out of RAM and not able 
+# to upload the whole dataframe at once.
 
 chunk <- 250000
 n <- nrow(dash_all)
@@ -1018,6 +1014,9 @@ d <- split(dash_all,r)
 copy_to(con, d$`1`, name = "DASH_ALL",  temporary = FALSE, overwrite = TRUE)
 dbAppendTable(con, value =  d$`2`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`3`, name = "DASH_ALL")
-
+dbAppendTable(con, value =  d$`4`, name = "DASH_ALL")
+dbAppendTable(con, value =  d$`5`, name = "DASH_ALL")
+dbAppendTable(con, value =  d$`6`, name = "DASH_ALL")
+dbAppendTable(con, value =  d$`7`, name = "DASH_ALL")
 
 #### End --------
