@@ -21,7 +21,7 @@ import_files <- function(dir,globy,naming){
 
 
 ####  Enrollment -----
-# https://www.cde.ca.gov/ds/sd/sd/filesenr.asp
+# https://www.cde.ca.gov/ds/ad/filesenr.asp
 
 
 enr_vroom <- import_files(here("data","enrollment"),"enr*txt","none") 
@@ -29,14 +29,15 @@ enr_vroom <- import_files(here("data","enrollment"),"enr*txt","none")
 enr <- enr_vroom %>%
     mutate(YEAR = str_extract(YEAR,"\\d\\d"))
 
-
+enr.latest <- enr %>%
+  filter(YEAR == max(YEAR))
 
 copy_to(con, enr, name = "ENROLLMENT",  temporary = FALSE, overwrite = TRUE)
 
-
+dbAppendTable(con, value =  enr.latest, name = "ENROLLMENT")
 
 #### Cumulative Enrollment -----
-# https://www.cde.ca.gov/ds/sd/sd/filesenrcum.asp
+# https://www.cde.ca.gov/ds/ad/filesenrcum.asp
 
 
 
@@ -726,7 +727,7 @@ copy_to(con, cost, name = "COST",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  Staff Demo -----  
-# https://www.cde.ca.gov/ds/sd/df/filesstaffdemo.asp
+# https://www.cde.ca.gov/ds/ad/staff.asp
 
 
 staffdemo <- import_files(here("data","staff"),"StaffDemo*txt","none") 
@@ -977,6 +978,7 @@ copy_to(con, growth, name = "GROWTH",  temporary = FALSE, overwrite = TRUE)
 
 ### Schools  -----  
 # https://www.cde.ca.gov/ds/si/ds/pubschls.asp
+# AKA entities
 
 
 schools <- import_files(here("data","schools"),"pub*txt","none") 
@@ -1018,5 +1020,9 @@ dbAppendTable(con, value =  d$`4`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`5`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`6`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`7`, name = "DASH_ALL")
+
+
+
+
 
 #### End --------
