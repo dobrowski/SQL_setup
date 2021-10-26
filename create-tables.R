@@ -1022,6 +1022,27 @@ dbAppendTable(con, value =  d$`6`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`7`, name = "DASH_ALL")
 
 
+### Stability Rate  -----  
+# https://www.cde.ca.gov/ds/ad/filessr.asp
+
+
+
+# temp <- read.delim(here("data","stability","sr1819.txt"), skipNul = TRUE, fileEncoding = 'UTF-16LE')
+
+setwd(here("data","stability"))
+
+files <- fs::dir_ls(glob = "sr*txt")
+
+print(files)
+
+#  Can't use vroom because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
+stability <- map_df(files, ~read.delim(.x,  skipNul = TRUE, fileEncoding = 'UTF-16LE'))
+
+setwd(here())
+
+
+
+copy_to(con, stability, name = "STABILITY",  temporary = FALSE, overwrite = TRUE)
 
 
 
