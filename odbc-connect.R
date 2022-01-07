@@ -24,7 +24,7 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "CAASPP") %>% 
+headenr <- tbl(con, "ENROLLMENT") %>% 
     filter(ETHNIC == 6) %>%
     head(20)
 

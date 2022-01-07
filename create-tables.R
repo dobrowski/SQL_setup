@@ -19,6 +19,24 @@ import_files <- function(dir,globy,naming){
     output
 }
 
+split_for_sql <- function(chunky = 250000,df,tablename){
+  
+  chunk <- chunky
+  n <- nrow(df)
+  r  <- rep(1:ceiling(n/chunk),each=chunk)[1:n]
+  d <- split(df,r)
+  
+  
+  copy_to(con, d$`1`, name = tablename,  temporary = FALSE, overwrite = TRUE)
+  
+  for (i in names(d[2:length(d)]) ) {
+    print(i)
+    dbAppendTable(con, value =  d[[i]], name = tablename)
+  }
+  
+  
+}
+
 
 ####  Enrollment -----
 # https://www.cde.ca.gov/ds/ad/filesenr.asp
@@ -626,25 +644,26 @@ caaspp <- full_join(caaspp,caaspp21)
 
 #
 
-copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+# copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
 
 
 #  Process to make smaller files so SQL doesn't time out
 
-chunk <- 250000
-n <- nrow(caaspp)
-r  <- rep(1:ceiling(n/chunk),each=chunk)[1:n]
-d <- split(caaspp,r)
+# chunk <- 250000
+# n <- nrow(caaspp)
+# r  <- rep(1:ceiling(n/chunk),each=chunk)[1:n]
+# d <- split(caaspp,r)
+# 
+# 
+# copy_to(con, d$`1`, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+# 
+# for (i in names(d[2:length(d)]) ) {
+#   print(i)
+#   dbAppendTable(con, value =  d[[i]], name = "CAASPP")
+# }
 
 
-copy_to(con, d$`1`, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
-
-for (i in names(d[2:length(d)]) ) {
-  print(i)
-  dbAppendTable(con, value =  d[[i]], name = "CAASPP")
-}
-
-
+split_for_sql(chunky = 250000, df = caaspp, tablename = "CAASPP")
 
 
 ####  Initial ELPAC -----  
@@ -667,22 +686,35 @@ setwd(here())
 
 
 ielpac <- ielpac %>% 
-  mutate_at(vars(TotalEnrolled:TotalTestedWithScores,OverallMeanSclScr:WritLangTotal), funs(as.numeric) ) 
+  mutate_at(vars(TotalEnrolled:TotalTestedWithScores,OverallMeanSclScr:WritLangTotal), funs(as.numeric) ) %>%
+  mutate(StudentGroupID = if_else(is.na(StudentGroupID),StudentGroupId,StudentGroupID)) %>%
+  select(-StudentGroupId)
 
 
-copy_to(con, ielpac, name = "IELPAC",  temporary = FALSE, overwrite = TRUE)
+# copy_to(con, ielpac, name = "IELPAC",  temporary = FALSE, overwrite = TRUE)
 
+
+split_for_sql(chunky = 250000, df = ielpac, tablename = "IELPAC")
 
 
 ###  Summative ELPAC -----  
 # https://caaspp-elpac.cde.ca.gov/elpac/ResearchFilesSA?ps=true&lstTestYear=2019&lstTestType=SA&lstGroup=1&lstSubGroup=001&lstGrade=13&lstCounty=00&lstDistrict=00000&lstSchool=0000000#dl
 
 
-carotfile <- read_delim(here("data","elpac","sa_elpac2019_all_csv_v2.zip"),
-                        delim = "^")
-write_delim(carotfile,
-            here("data","elpac","sa_elpac2019_all_csv_v2carot.txt"),
-            delim = ",")
+# Needed to establish csv delimited files that can be read together using the same deliminator
+
+# carotfile <- read_delim(here("data","elpac","sa_elpac2019_all_csv_v2.zip"),
+#                         delim = "^")
+# write_delim(carotfile,
+#             here("data","elpac","sa_elpac2019_all_csv_v2carot.txt"),
+#             delim = ",")
+# 
+# 
+# carotfile <- read_delim(here("data","elpac","sa_elpac2021_all_csv_v1.zip"),
+#                         delim = "^")
+# write_delim(carotfile,
+#             here("data","elpac","sa_elpac2021_all_csv_v1carot.txt"),
+#             delim = ",")
 
 
 setwd(here("data","elpac"))
@@ -698,11 +730,16 @@ setwd(here())
 
 
 selpac <- selpac %>% 
-  mutate_at(vars(TotalEnrolled:TotalTested,OverallMeanSclScr:TotalTestedWithScores), funs(as.numeric) ) 
+  mutate(StudentGroupID = if_else(is.na(StudentGroupID),StudentGroupId,StudentGroupID),
+         TotalTestedWithScores = if_else(is.na(TotalTestedWithScores),TotalTested,TotalTestedWithScores)) %>%
+  select(-StudentGroupId, -TotalTested ) %>%
+  mutate_at(vars(TotalEnrolled,OverallMeanSclScr:TotalTestedWithScores), funs(as.numeric) ) 
 
 
 copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
 
+
+split_for_sql(chunky = 250000, df = selpac, tablename = "SELPAC")
 
 
 ####  CAST -----  
