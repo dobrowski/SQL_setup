@@ -24,9 +24,13 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "ENROLLMENT") %>% 
+headenr <- tbl(con, "CAASPP") %>% 
     filter(ETHNIC == 6) %>%
     head(20)
+
+
+headenr <- tbl(con, "CAASPP") %>% 
+    select(Test_Year) 
 
 
 
@@ -37,4 +41,4 @@ tbl(con, "CODEBOOK") %>%
     head(20)
 
 
-headenr
+years <- collect(headenr)

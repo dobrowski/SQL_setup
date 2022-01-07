@@ -583,21 +583,67 @@ copy_to(con, dash_susp, name = "DASH_SUSP",  temporary = FALSE, overwrite = TRUE
 
 setwd(here("data","caaspp"))
 files <- fs::dir_ls(glob = "sb*txt")
+
+files21 <- files[6]
+
+files <- files[1:5]
+
 print(files)
-caaspp <- map_df(files,
+caaspp2 <- map_df(files,
                     ~vroom(.x,
-                           col_types = c("Total Tested At Entity Level" = "c",
-                                         "CAASPP Reported Enrollment" = "c",
-                                         "Students Tested" = "c",
-                                         "Students with Scores" = "c",
-                                         "Total Tested with Scores" = "c") ,
+                           col_types = c("Total_Tested_At_Entity_Level" = "c",
+                                         "CAASPP_Reported_Enrollment" = "c",
+                                         "Students_Tested" = "c",
+                                         "Students_with_Scores" = "c",
+                                         "Total_Tested_with_Scores" = "c") ,
                            .name_repair = ~ janitor::make_clean_names(., case = "none"),
                             id = "id"
   ))
 setwd(here())
 
+setwd(here("data","caaspp"))
+caaspp21 <- vroom(files21,
+                  # col_types = c("Total_Tested_At_Entity_Level" = "c",
+                  #               "CAASPP_Reported_Enrollment" = "c",
+                  #               "Students_Tested" = "c",
+                  #               "Students_with_Scores" = "c",
+                  #               "Total_Tested_with_Scores" = "c") ,
+                  .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                  id = "id",
+                  delim = "^"
+)
+setwd(here())
+
+caaspp21 <- caaspp21 %>%
+  rename(Test_Id = Test_ID,
+         CAASPP_Reported_Enrollment = Students_Enrolled,
+         Total_Tested_At_Entity_Level = Total_Tested_at_Reporting_Level,
+          Total_Tested_with_Scores = Total_Tested_with_Scores_at_Reporting_Level,
+         Subgroup_ID = Student_Group_ID,
+         ) 
+
+caaspp <- full_join(caaspp,caaspp21)
+
+#
 
 copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+
+
+#  Process to make smaller files so SQL doesn't time out
+
+chunk <- 250000
+n <- nrow(caaspp)
+r  <- rep(1:ceiling(n/chunk),each=chunk)[1:n]
+d <- split(caaspp,r)
+
+
+copy_to(con, d$`1`, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
+
+for (i in names(d[2:length(d)]) ) {
+  print(i)
+  dbAppendTable(con, value =  d[[i]], name = "CAASPP")
+}
+
 
 
 
@@ -810,6 +856,37 @@ courseenroll <- courseenroll %>%
          ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
 
 copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
+
+#### CBEDS about Schools and Districts  -----  
+# https://www.cde.ca.gov/ds/ad/filescbedsorab.asp
+
+
+cbeds <- import_files(here("data","cbedsb"),"cbed*txt","none") 
+
+
+setwd(here("data","cbedsb"))
+
+files <- fs::dir_ls(glob = "cbed*txt")
+
+print(files)
+
+#  Can't use vroom because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
+cbeds <- map_df(files, ~read.delim(.x,  skipNul = TRUE, fileEncoding = 'UTF-16LE'))
+
+setwd(here())
+
+
+
+
+courseenroll <- courseenroll %>% 
+  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"),
+         ClassID    = iconv(enc2utf8(ClassID),sub="byte"))
+
+copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, overwrite = TRUE)
+
+
 
 
 
