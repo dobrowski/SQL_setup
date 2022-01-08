@@ -29,8 +29,8 @@ headenr <- tbl(con, "ENROLLMENT") %>%
     head(20)
 
 
-headenr <- tbl(con, "CAASPP") %>% 
-    select(Test_Year) 
+headenr <- tbl(con, "SELPAC") %>% 
+    select(TestYear) 
 
 
 

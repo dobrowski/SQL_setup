@@ -157,15 +157,16 @@ copy_to(con, cgr, name = "CGR",  temporary = FALSE, overwrite = TRUE)
 exp <- import_files(here("data","exp"),"exp*txt","snake") 
 
 exp <- exp %>%
-    mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn)) %>%
+    mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn),
+           expulsion_count_defiance_only = if_else(is.na(expulsion_count_defiance_only),expulsion_count_of_students_expelled_defiance_only,expulsion_count_defiance_only)
+           ) %>%
     select(-charter_y_n) %>%
+  select(-expulsion_count_of_students_expelled_defiance_only) %>%
     mutate(charter_yn = recode(charter_yn, Y = "Yes", N = "No")) %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
   mutate_at(vars(cumulative_enrollment:expulsion_count_other_reasons,expulsion_count_defiance_only), funs(as.numeric) )
 
 copy_to(con, exp, name = "EXP",  temporary = FALSE, overwrite = TRUE)
-
-
 
 
 ####  Suspensions  -----
@@ -174,16 +175,17 @@ copy_to(con, exp, name = "EXP",  temporary = FALSE, overwrite = TRUE)
 susp <- import_files(here("data","susp"),"susp*txt","snake") 
 
 susp <- susp  %>%
-    mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn)) %>%
+    mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn),
+           suspension_count_defiance_only = if_else(is.na(suspension_count_defiance_only),suspension_count_of_students_suspended_defiance_only,suspension_count_defiance_only)
+           ) %>%
     select(-charter_y_n) %>%
+  select(-suspension_count_of_students_suspended_defiance_only) %>%
     mutate(charter_yn = recode(charter_yn, Y = "Yes", N = "No")) %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
   mutate_at(vars(cumulative_enrollment:suspension_count_other_reasons,suspension_count_defiance_only), funs(as.numeric) )
 
 
 copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
-
-
 
 
 
@@ -346,7 +348,19 @@ copy_to(con, dash_cci, name = "DASH_CCI",  temporary = FALSE, overwrite = TRUE)
 # https://www.cde.ca.gov/ta/ac/cm/
  
 
-dash_census <- import_files(here("data","dash"),"cen*txt","none") 
+dash_census <- import_files(here("data","dash"),"cen*txt","snake") 
+
+dash_census2 <- dash_census %>%
+  mutate(rtype = if_else(is.na(rtype),r_type,rtype),
+         schoolname = if_else(is.na(schoolname),school_name,schoolname),
+         districtname = if_else(is.na(districtname),district_name,districtname),
+         countyname = if_else(is.na(countyname),county_name,countyname),
+         totalenrollment = if_else(is.na(totalenrollment),total_enrollment,totalenrollment),
+         subgrouptotal = if_else(is.na(subgrouptotal),sub_group_total,subgrouptotal),
+         reportingyear = if_else(is.na(reportingyear),reporting_year,reportingyear),
+         ) %>%
+  select(YEAR:reportingyear)
+
 
 copy_to(con, dash_census, name = "DASH_CENSUS",  temporary = FALSE, overwrite = TRUE)
 
@@ -467,8 +481,6 @@ dash_grad <- map_df(files,
                           id = "id"))
 
 setwd(here())
-
-
 
 
 dash_grad <- dash_grad %>%
