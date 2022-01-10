@@ -29,7 +29,7 @@ headenr <- tbl(con, "ENROLLMENT") %>%
     head(20)
 
 
-headenr <- tbl(con, "CHRONIC") %>% 
+headenr <- tbl(con, "GRAD_FOUR") %>% 
     select(AcademicYear) 
 
 

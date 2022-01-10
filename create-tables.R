@@ -199,7 +199,10 @@ grad4 <- grad4  %>%
 
 
 
-copy_to(con, grad4, name = "GRAD_FOUR",  temporary = FALSE, overwrite = TRUE)
+# copy_to(con, grad4, name = "GRAD_FOUR",  temporary = FALSE, overwrite = TRUE)
+
+
+split_for_sql(chunky = 250000, df = grad4, tablename = "GRAD_FOUR")
 
 
 tbl(con,"GRAD_FOUR") %>%
@@ -212,6 +215,9 @@ tbl(con,"GRAD_FOUR") %>%
 grad5 <- import_files(here("data","grad5"),"cohort*txt","none") 
 
 grad5 <- grad5  %>%
+  mutate(AcademicYear = if_else(is.na(AcademicYear),ReportingYear,AcademicYear),
+  ) %>%
+  select(-ReportingYear) %>%
   mutate_at(vars(Cohort_Students:Dropout_Rate), funs(as.numeric) ) 
 
 copy_to(con, grad5, name = "GRAD_FIVE",  temporary = FALSE, overwrite = TRUE)
