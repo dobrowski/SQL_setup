@@ -237,7 +237,19 @@ copy_to(con, reclass, name = "RECLASS",  temporary = FALSE, overwrite = TRUE)
 chronic <- import_files(here("data","chronic"),"chr*txt","none") 
 
 chronic <- chronic  %>% 
-    mutate_at(vars(CumulativeEnrollment:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
+  mutate(AcademicYear = if_else(is.na(AcademicYear),Academic_Year,AcademicYear),
+         AggregateLevel = if_else(is.na(AggregateLevel),Aggregate_Level,AggregateLevel),
+         CountyCode = if_else(is.na(CountyCode),County_Code,CountyCode),
+         DistrictCode = if_else(is.na(DistrictCode),District_Code,DistrictCode),
+         SchoolCode = if_else(is.na(SchoolCode),School_Code,SchoolCode),
+         CountyName = if_else(is.na(CountyName),County_Name,CountyName),
+         DistrictName = if_else(is.na(DistrictName),District_Name,DistrictName),
+         SchoolName = if_else(is.na(SchoolName),School_Name,SchoolName),
+         CharterYN = if_else(is.na(CharterYN),Charter_School,CharterYN),
+         ReportingCategory = if_else(is.na(ReportingCategory),Reporting_Category,ReportingCategory),
+  ) %>%
+  select(YEAR:ChronicAbsenteeismRate) %>%
+    mutate_at(vars(ChronicAbsenteeismEligibleCumula:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
     mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
 
 

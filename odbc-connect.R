@@ -29,8 +29,8 @@ headenr <- tbl(con, "ENROLLMENT") %>%
     head(20)
 
 
-headenr <- tbl(con, "SELPAC") %>% 
-    select(TestYear) 
+headenr <- tbl(con, "CHRONIC") %>% 
+    select(AcademicYear) 
 
 
 
@@ -42,3 +42,4 @@ tbl(con, "CODEBOOK") %>%
 
 
 years <- collect(headenr)
+unique(years)
