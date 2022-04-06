@@ -86,7 +86,7 @@ copy_to(con, elas, name = "ELAS",  temporary = FALSE)
 
 
 ####  FRPM  ----
-# https://www.cde.ca.gov/ds/sd/sd/filessp.asp
+# https://www.cde.ca.gov/ds/ad/filessp.asp
 
 
 
@@ -106,7 +106,7 @@ frpm <- sapply(files,
 setwd(here())
 
 
-copy_to(con, frpm, name = "FRPM",  temporary = FALSE)
+copy_to(con, frpm, name = "FRPM",  temporary = FALSE, overwrite = TRUE)
 
 
 

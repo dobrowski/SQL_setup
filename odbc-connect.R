@@ -29,8 +29,10 @@ headenr <- tbl(con, "ENROLLMENT") %>%
     head(20)
 
 
-headenr <- tbl(con, "GRAD_FOUR") %>% 
-    select(AcademicYear) 
+headenr <- tbl(con, "CHRONIC") %>% 
+    filter(YEAR == "chrabs2021.txt",
+           CountyCode == "27",
+           CharterYN == "No") 
 
 
 
@@ -42,4 +44,5 @@ tbl(con, "CODEBOOK") %>%
 
 
 years <- collect(headenr)
-unique(years)
+
+clipr::write_clip(years)
