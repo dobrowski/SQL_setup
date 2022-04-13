@@ -42,7 +42,7 @@ split_for_sql <- function(chunky = 250000,df,tablename){
 # https://www.cde.ca.gov/ds/ad/filesenr.asp
 
 
-enr_vroom <- import_files(here("data","enrollment"),"enr*txt","none") 
+enr_vroom <- import_files(here("data","enrollment","enr"),"enr*txt","none") 
 
 enr <- enr_vroom %>%
     mutate(YEAR = str_extract(YEAR,"\\d\\d"))
@@ -929,6 +929,7 @@ copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, over
 #### CBEDS about Schools and Districts  -----  
 # https://www.cde.ca.gov/ds/ad/filescbedsorab.asp
 
+# Don't work well 
 
 cbeds <- import_files(here("data","cbedsb"),"cbed*txt","none") 
 
@@ -940,10 +941,13 @@ files <- fs::dir_ls(glob = "cbed*txt")
 print(files)
 
 #  Can't use vroom because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
-cbeds <- map_df(files, ~read.delim(.x,  skipNul = TRUE, fileEncoding = 'UTF-16LE'))
+cbeds <- map_df(files, ~read.delim(.x,  skipNul = TRUE, cols("ccccccccdd"))) # fileEncoding = 'UTF-16LE'
+
+
+cbeds.temp <- map_df(files[5:9], ~vroom(.x, col_types = "ccccccccdd"))
+                     
 
 setwd(here())
-
 
 
 
@@ -1188,6 +1192,16 @@ setwd(here())
 
 copy_to(con, stability, name = "STABILITY",  temporary = FALSE, overwrite = TRUE)
 
+
+###  Fluent English Proficient -------
+# https://www.cde.ca.gov/ds/ad/filesfepsch.asp
+
+
+fep_vroom <- import_files(here("data","fep"),"fep*txt","none") 
+
+
+
+copy_to(con, fep_vroom, name = "FEP",  temporary = FALSE, overwrite = TRUE)
 
 
 #### End --------

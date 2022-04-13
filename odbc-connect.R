@@ -24,9 +24,10 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "ENROLLMENT") %>% 
-    filter(ETHNIC == 6) %>%
-    head(20)
+headenr <- tbl(con, "FEP") %>% 
+    filter(YEAR == "fep21.txt") %>%
+    head(20) %>%
+    collect()
 
 
 headenr <- tbl(con, "CHRONIC") %>% 
