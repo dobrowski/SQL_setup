@@ -82,7 +82,7 @@ elas <- elas_vroom %>%
 
 
 
-copy_to(con, elas, name = "ELAS",  temporary = FALSE)
+copy_to(con, elas, name = "ELAS",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  FRPM  ----
