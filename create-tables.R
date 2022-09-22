@@ -632,7 +632,9 @@ copy_to(con, dash_susp, name = "DASH_SUSP",  temporary = FALSE, overwrite = TRUE
 setwd(here("data","caaspp"))
 files <- fs::dir_ls(glob = "sb*txt")
 
-files21 <- files[6]
+n <- length(files)
+
+files21 <- files[6:n]
 
 files <- files[1:5]
 
@@ -670,7 +672,7 @@ caaspp21 <- caaspp21 %>%
          Subgroup_ID = Student_Group_ID,
          ) 
 
-caaspp <- full_join(caaspp,caaspp21)
+caaspp <- bind_rows(caaspp2,caaspp21)
 
 #
 
@@ -739,11 +741,11 @@ split_for_sql(chunky = 250000, df = ielpac, tablename = "IELPAC")
 #             here("data","elpac","sa_elpac2019_all_csv_v2carot.txt"),
 #             delim = ",")
 # 
-# 
-# carotfile <- read_delim(here("data","elpac","sa_elpac2021_all_csv_v1.zip"),
+
+# carotfile <- read_delim(here("data","elpac","sa_elpac2022_all_csv_v1.zip"),
 #                         delim = "^")
 # write_delim(carotfile,
-#             here("data","elpac","sa_elpac2021_all_csv_v1carot.txt"),
+#             here("data","elpac","sa_elpac2022_all_csv_v1carot.txt"),
 #             delim = ",")
 
 
@@ -1203,5 +1205,16 @@ fep_vroom <- import_files(here("data","fep"),"fep*txt","none")
 
 copy_to(con, fep_vroom, name = "FEP",  temporary = FALSE, overwrite = TRUE)
 
+
+###  Teaching Assignment Monitoring Outcome -------
+# https://www.cde.ca.gov/ds/ad/filestamo.asp
+
+
+tamo_vroom <- import_files(here("data","tamo"),"tamo*txt","none") %>%
+    mutate(School_Name = iconv(enc2utf8(School_Name),sub="byte"))
+
+
+
+copy_to(con, tamo_vroom, name = "Teaching",  temporary = FALSE, overwrite = TRUE)
 
 #### End --------

@@ -8,11 +8,11 @@ con <- mcoe_sql_con()
 
 
 
-headenr <- tbl(con, "STABILITY") %>% 
-    # filter(CountyCode == "27",
-    #        DistrictCode == "10272",
-    #        AcademicYear >= "2018-19") %>%
-#    head(20) %>%
+headenr <- tbl(con, "CAASPP") %>% 
+filter(#CountyCode == "27",
+      # DistrictCode == "10272",
+       Test_Year >= "2022") %>%
+   head(20) %>%
     collect()
 
 grad_four <- headenr  %>% 
