@@ -742,11 +742,11 @@ split_for_sql(chunky = 250000, df = ielpac, tablename = "IELPAC")
 #             delim = ",")
 # 
 
-# carotfile <- read_delim(here("data","elpac","sa_elpac2022_all_csv_v1.zip"),
-#                         delim = "^")
-# write_delim(carotfile,
-#             here("data","elpac","sa_elpac2022_all_csv_v1carot.txt"),
-#             delim = ",")
+carotfile <- read_delim(here("data","elpac","sa_elpac2022_all_csv_v1.zip"),
+                        delim = "^")
+write_delim(carotfile,
+            here("data","elpac","sa_elpac2022_all_csv_v1carot.txt"),
+            delim = ",")
 
 
 setwd(here("data","elpac"))
@@ -768,7 +768,7 @@ selpac <- selpac %>%
   mutate_at(vars(TotalEnrolled,OverallMeanSclScr:TotalTestedWithScores), funs(as.numeric) ) 
 
 
-copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
+# copy_to(con, selpac, name = "SELPAC",  temporary = FALSE, overwrite = TRUE)
 
 
 split_for_sql(chunky = 250000, df = selpac, tablename = "SELPAC")

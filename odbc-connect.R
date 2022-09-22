@@ -24,8 +24,8 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "ELAS") %>% 
-    filter(YEAR == "2122") %>%
+headenr <- tbl(con, "SELPAC") %>% 
+    filter(TestYear == "2022") %>%
     head(20) %>%
     collect()
 
