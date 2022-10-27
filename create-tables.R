@@ -19,6 +19,43 @@ import_files <- function(dir,globy,naming){
     output
 }
 
+import_files_caret <- function(dir,globy,naming,counter){
+    setwd(dir)
+    
+    files <- fs::dir_ls(glob = globy)
+    
+    
+    files21 <- files[(counter+1):length(files)]
+    
+    print(files21)
+    
+    files <- files[1:counter]
+    
+    print("And now the second batch")
+    
+    
+    print(files)
+    
+    
+    output21 <- map_df(files21, ~vroom(.x,
+                                    .name_repair = ~ janitor::make_clean_names(., case = naming),
+                                    id = "YEAR",
+                       delim = "^")
+    )
+    
+    
+    
+    output1 <- map_df(files, ~vroom(.x,
+                                    .name_repair = ~ janitor::make_clean_names(., case = naming),
+                                    id = "YEAR"))
+    
+setwd(here())
+
+output <- bind_rows(output1,output21)
+    
+    output
+}
+
 split_for_sql <- function(chunky = 250000,df,tablename){
   
   chunk <- chunky
@@ -649,9 +686,7 @@ caaspp2 <- map_df(files,
                            .name_repair = ~ janitor::make_clean_names(., case = "none"),
                             id = "id"
   ))
-setwd(here())
 
-setwd(here("data","caaspp"))
 caaspp21 <- vroom(files21,
                   # col_types = c("Total_Tested_At_Entity_Level" = "c",
                   #               "CAASPP_Reported_Enrollment" = "c",
@@ -779,17 +814,87 @@ split_for_sql(chunky = 250000, df = selpac, tablename = "SELPAC")
 
 
 
-cast <- import_files(here("data","cast"),"cast*txt","none") 
+# 
+# 
+# setwd(here("data","cast"))
+# files <- fs::dir_ls(glob = "cast*txt")
+# 
+# n <- length(files)
+# 
+# files21 <- files[2:n]
+# 
+# files <- files[1:1]
+# 
+# print(files)
+# # caaspp2 <- map_df(files,
+# #                   ~vroom(.x,
+# #                          col_types = c("Total_Tested_At_Entity_Level" = "c",
+# #                                        "CAASPP_Reported_Enrollment" = "c",
+# #                                        "Students_Tested" = "c",
+# #                                        "Students_with_Scores" = "c",
+# #                                        "Total_Tested_with_Scores" = "c") ,
+# #                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+# #                          id = "id"
+# #                   ))
+# 
+# 
+# cast <- import_files(here("data","cast"),files,"none") 
+# 
+# setwd(here("data","cast"))
+# cast21 <- vroom(files21,
+#                   # col_types = c("Total_Tested_At_Entity_Level" = "c",
+#                   #               "CAASPP_Reported_Enrollment" = "c",
+#                   #               "Students_Tested" = "c",
+#                   #               "Students_with_Scores" = "c",
+#                   #               "Total_Tested_with_Scores" = "c") ,
+#                   .name_repair = ~ janitor::make_clean_names(., case = "none"),
+#                   id = "YEAR",
+#                   delim = "^"
+# )
+# 
+# setwd(here())
+# 
+# cast21 <- cast21 %>%
+#     rename(
+#         
+#         # Test_Id = Test_ID,
+#         #    CAASPP_Reported_Enrollment = Students_Enrolled,
+#             Total_Number_Tested_at_Entity_Level_and_Demographic = Total_Tested_at_Reporting_Level,
+#             Total_Number_Tested_at_this_Demographic_with_Valid_Scores = Total_Tested_with_Scores_at_Reporting_Level,
+#             Total_Number_of_Students_with_Valid_Scores = Students_with_Scores,
+#            Demographic_ID = Student_Group_ID,
+#             CAST_Reported_Enrollment = Students_Enrolled,
+#             Total_Number_of_Students_Tested = Students_Tested
+#            
+#     )
+# 
+# cast.joint <- bind_rows(cast,cast21)
 
 
-cast <- cast %>% 
-  mutate_at(vars(Total_Number_Tested_at_Entity_Level_and_Demographic,
-                 Total_Number_Tested_at_this_Demographic_with_Valid_Scores,
-                 CAST_Reported_Enrollment:Earth_and_Space_Sciences_Domain_Percent_Above_Standard),
+
+cast <- import_files_caret(here("data","cast"),"cast*txt","none",1)  %>%
+    mutate( 
+        Total_Number_Tested_at_Entity_Level_and_Demographic = coalesce(Total_Number_Tested_at_Entity_Level_and_Demographic, Total_Tested_at_Reporting_Level),
+        Total_Number_Tested_at_this_Demographic_with_Valid_Scores = coalesce(Total_Number_Tested_at_this_Demographic_with_Valid_Scores, Total_Tested_with_Scores_at_Reporting_Level),
+        Total_Number_of_Students_with_Valid_Scores = coalesce(Total_Number_of_Students_with_Valid_Scores, Students_with_Scores),
+        Demographic_ID = coalesce(Demographic_ID, Student_Group_ID),
+        CAST_Reported_Enrollment = coalesce(CAST_Reported_Enrollment, Students_Enrolled),
+        Total_Number_of_Students_Tested = coalesce(Total_Number_of_Students_Tested, Students_Tested)
+    ) %>%
+    select(
+        -Total_Tested_at_Reporting_Level,
+        -Total_Tested_with_Scores_at_Reporting_Level,
+        -Students_with_Scores,
+        -Student_Group_ID,
+        -Students_Enrolled,
+        -Students_Tested
+    )  %>% 
+  mutate_at(vars(starts_with("Total"), CAST_Reported_Enrollment:Earth_and_Space_Sciences_Domain_Percent_Above_Standard),
             funs(as.numeric) ) 
 
+split_for_sql(chunky = 250000, df = cast, tablename = "CAST")
 
-copy_to(con, cast, name = "CAST",  temporary = FALSE, overwrite = TRUE)
+
 
 ####  EL Grade and Language -----
 # https://www.cde.ca.gov/ds/ad/fileselsch.asp
