@@ -176,7 +176,7 @@ copy_to(con, upc, name = "UPC",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  College Going Rate  -----
-# https://www.cde.ca.gov/ds/sd/sd/filescgr12.asp
+# https://www.cde.ca.gov/ds/ad/filescgr12.asp
 
 cgr <- import_files(here("data","cgr"),"cgr*txt","none") %>%
   mutate_at(vars(High_School_Completers:Enrolled_Out_of_State_2_Year_College_Public_Private_12_Months), funs(as.numeric) )
@@ -185,6 +185,7 @@ cgr <- import_files(here("data","cgr"),"cgr*txt","none") %>%
 copy_to(con, cgr, name = "CGR",  temporary = FALSE, overwrite = TRUE)
 
 
+split_for_sql(chunky = 250000, df = cgr, tablename = "CGR")
 
 
 
@@ -709,25 +710,9 @@ caaspp21 <- caaspp21 %>%
 
 caaspp <- bind_rows(caaspp2,caaspp21)
 
-#
-
-# copy_to(con, caaspp, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
 
 
-#  Process to make smaller files so SQL doesn't time out
-
-# chunk <- 250000
-# n <- nrow(caaspp)
-# r  <- rep(1:ceiling(n/chunk),each=chunk)[1:n]
-# d <- split(caaspp,r)
-# 
-# 
-# copy_to(con, d$`1`, name = "CAASPP",  temporary = FALSE, overwrite = TRUE)
-# 
-# for (i in names(d[2:length(d)]) ) {
-#   print(i)
-#   dbAppendTable(con, value =  d[[i]], name = "CAASPP")
-# }
+# caaspp <- import_files_caret(here("data","caaspp"),"sb*txt","none",5)
 
 
 split_for_sql(chunky = 250000, df = caaspp, tablename = "CAASPP")
@@ -768,32 +753,9 @@ split_for_sql(chunky = 250000, df = ielpac, tablename = "IELPAC")
 # https://caaspp-elpac.cde.ca.gov/elpac/ResearchFilesSA?ps=true&lstTestYear=2019&lstTestType=SA&lstGroup=1&lstSubGroup=001&lstGrade=13&lstCounty=00&lstDistrict=00000&lstSchool=0000000#dl
 
 
-# Needed to establish csv delimited files that can be read together using the same deliminator
 
-# carotfile <- read_delim(here("data","elpac","sa_elpac2019_all_csv_v2.zip"),
-#                         delim = "^")
-# write_delim(carotfile,
-#             here("data","elpac","sa_elpac2019_all_csv_v2carot.txt"),
-#             delim = ",")
-# 
+selpac <- import_files_caret(here("data","elpac"),"sa*zip","none",1)
 
-carotfile <- read_delim(here("data","elpac","sa_elpac2022_all_csv_v1.zip"),
-                        delim = "^")
-write_delim(carotfile,
-            here("data","elpac","sa_elpac2022_all_csv_v1carot.txt"),
-            delim = ",")
-
-
-setwd(here("data","elpac"))
-files <- fs::dir_ls(glob = "sa*txt")
-print(files)
-selpac <- map_df(files,
-                 ~vroom(.x,
-                        delim = ",",
-                        .name_repair = ~ janitor::make_clean_names(., case = "none"),
-                        id = "id"
-                 ))
-setwd(here())
 
 
 selpac <- selpac %>% 
