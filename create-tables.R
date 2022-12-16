@@ -96,16 +96,19 @@ dbAppendTable(con, value =  enr.latest, name = "ENROLLMENT")
 
 
 
-cenr_vroom <- import_files(here("data","enrollment"),"cenr*txt","none") 
+cenr_vroom <- import_files(here("data","enrollment","cenroll"),"cenr*txt","snake") 
 
 cenr <- cenr_vroom %>%
-  mutate(YEAR = str_extract(YEAR,"\\d\\d")) %>%
-  mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
+#  mutate(YEAR = str_extract(YEAR,"\\d\\d")) %>%
+  mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
 
 
 
 copy_to(con, cenr, name = "CENROLLMENT",  temporary = FALSE, overwrite = TRUE)
 
+
+tbl(con,"CENROLLMENT") %>%
+    count()
 
 
 
@@ -230,10 +233,10 @@ copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
 ####  4 year adjusted grad cohort  -----
 # https://www.cde.ca.gov/ds/sd/sd/filesacgr.asp
 
-grad4 <- import_files(here("data","grad4"),"cohort*txt","none") 
+grad4 <- import_files(here("data","grad4"),"acg*txt","snake") 
 
 grad4 <- grad4  %>%
-  mutate_at(vars(CohortStudents:Still_Enrolled_Rate), funs(as.numeric) ) 
+  mutate_at(vars(cohort_students:still_enrolled_rate), funs(as.numeric) ) 
 
 
 
@@ -250,13 +253,13 @@ tbl(con,"GRAD_FOUR") %>%
 ####  5 year adjusted grad cohort  -----
 # https://www.cde.ca.gov/ds/sd/sd/filesfycgr.asp
 
-grad5 <- import_files(here("data","grad5"),"cohort*txt","none") 
+grad5 <- import_files(here("data","grad5"),"fyc*txt","snake") 
 
 grad5 <- grad5  %>%
-  mutate(AcademicYear = if_else(is.na(AcademicYear),ReportingYear,AcademicYear),
-  ) %>%
-  select(-ReportingYear) %>%
-  mutate_at(vars(Cohort_Students:Dropout_Rate), funs(as.numeric) ) 
+  # mutate(AcademicYear = if_else(is.na(AcademicYear),ReportingYear,AcademicYear),
+  # ) %>%
+  # select(-ReportingYear) %>%
+  mutate_at(vars(cohort_students:dropout_rate), funs(as.numeric) ) 
 
 copy_to(con, grad5, name = "GRAD_FIVE",  temporary = FALSE, overwrite = TRUE)
 
@@ -278,28 +281,40 @@ copy_to(con, reclass, name = "RECLASS",  temporary = FALSE, overwrite = TRUE)
 ####  Chronic Absenteeism  -----  
 # https://www.cde.ca.gov/ds/sd/sd/filesabd.asp
 
-chronic <- import_files(here("data","chronic"),"chr*txt","none") 
+setwd(here("data","chronic"))
+
+files <- fs::dir_ls(glob = "chr*txt")
+
+print(files)
+
+chronic <- map_df(files, ~vroom(.x, col_types = "ccccccccccddd" ,.name_repair = ~ janitor::make_clean_names(., case = "snake"), id = "YEAR"))
+
+setwd(here())
+
+
 
 chronic <- chronic  %>% 
-  mutate(AcademicYear = if_else(is.na(AcademicYear),Academic_Year,AcademicYear),
-         AggregateLevel = if_else(is.na(AggregateLevel),Aggregate_Level,AggregateLevel),
-         CountyCode = if_else(is.na(CountyCode),County_Code,CountyCode),
-         DistrictCode = if_else(is.na(DistrictCode),District_Code,DistrictCode),
-         SchoolCode = if_else(is.na(SchoolCode),School_Code,SchoolCode),
-         CountyName = if_else(is.na(CountyName),County_Name,CountyName),
-         DistrictName = if_else(is.na(DistrictName),District_Name,DistrictName),
-         SchoolName = if_else(is.na(SchoolName),School_Name,SchoolName),
-         CharterYN = if_else(is.na(CharterYN),Charter_School,CharterYN),
-         ReportingCategory = if_else(is.na(ReportingCategory),Reporting_Category,ReportingCategory),
+  mutate(#AcademicYear = if_else(is.na(AcademicYear),Academic_Year,AcademicYear),
+         #AggregateLevel = if_else(is.na(AggregateLevel),Aggregate_Level,AggregateLevel),
+         #CountyCode = if_else(is.na(CountyCode),County_Code,CountyCode),
+         #DistrictCode = if_else(is.na(DistrictCode),District_Code,DistrictCode),
+         #SchoolCode = if_else(is.na(SchoolCode),School_Code,SchoolCode),
+         #CountyName = if_else(is.na(CountyName),County_Name,CountyName),
+         #DistrictName = if_else(is.na(DistrictName),District_Name,DistrictName),
+         #SchoolName = if_else(is.na(SchoolName),School_Name,SchoolName),
+      charter_yn = if_else(is.na(charter_yn),charter_school,charter_yn),
+         #ReportingCategory = if_else(is.na(ReportingCategory),Reporting_Category,ReportingCategory),
   ) %>%
-  select(YEAR:ChronicAbsenteeismRate) %>%
-    mutate_at(vars(ChronicAbsenteeismEligibleCumula:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
-    mutate(SchoolName = iconv(enc2utf8(SchoolName),sub="byte"))
+  select(YEAR:chronic_absenteeism_eligible_cumulative_enrollment) %>%
+#    mutate_at(vars(ChronicAbsenteeismEligibleCumula:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
+    mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
 
 
 copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
 
 
+tbl(con,"CHRONIC") %>%
+    count()
 
 ####  SAT  -----   
 # https://www.cde.ca.gov/ds/sp/ai/   
@@ -406,13 +421,14 @@ copy_to(con, dash_cci, name = "DASH_CCI",  temporary = FALSE, overwrite = TRUE)
 
 dash_census <- import_files(here("data","dash"),"cen*txt","snake") 
 
-dash_census2 <- dash_census %>%
+dash_census <- dash_census %>%
   mutate(rtype = if_else(is.na(rtype),r_type,rtype),
          schoolname = if_else(is.na(schoolname),school_name,schoolname),
          districtname = if_else(is.na(districtname),district_name,districtname),
          countyname = if_else(is.na(countyname),county_name,countyname),
          totalenrollment = if_else(is.na(totalenrollment),total_enrollment,totalenrollment),
          subgrouptotal = if_else(is.na(subgrouptotal),sub_group_total,subgrouptotal),
+         subgrouptotal = if_else(is.na(subgrouptotal),subgroup_total,subgrouptotal),
          reportingyear = if_else(is.na(reportingyear),reporting_year,reportingyear),
          ) %>%
   select(YEAR:reportingyear)
@@ -450,15 +466,15 @@ print(files)
 
 dash_ela <- map_df(files[1:4],
                    ~vroom(.x,
-                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
 
 setwd(here())
 
 dash_ela <- dash_ela %>%
     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
-    mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
-    select(-ReportingYear)
+    mutate(reportingyear = if_else(is.na(reporting_year),reportingyear, reporting_year)) %>%
+    select(-reporting_year)
 
 
 
@@ -487,12 +503,13 @@ copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrit
 
 #  ELPI has been done differently every year, so it is not being included for now since the data files are inconsistent
 
+# 
+# dash_elpi <- vroom(here("data","dash","elpi*.txt") ) %>%
+#   mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
 
-dash_elpi <- vroom(here("data","dash","elpidownload2019.txt") ) %>%
-  mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
 
-
-# dash_elpi <- import_files(here("data","dash"),"elpi*txt","none") 
+dash_elpi <- import_files(here("data","dash"),"elpi*txt","snake") %>%
+       mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
 # 
 # 
 # 
@@ -519,6 +536,9 @@ dash_elpi <- vroom(here("data","dash","elpidownload2019.txt") ) %>%
  
  copy_to(con, dash_elpi, name = "DASH_ELPI",  temporary = FALSE, overwrite = TRUE)
  
+ 
+ tbl(con, "DASH_ELPI") %>%
+     count()
 
 ####  Dashboard Grad -----  
 # https://www.cde.ca.gov/ta/ac/cm/
@@ -533,7 +553,7 @@ print(files)
 dash_grad <- map_df(files,
                    ~vroom(.x,
                           col_types = c(reportingyear = "c") ,
-                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
 
 setwd(here())
@@ -558,15 +578,15 @@ print(files)
 
 dash_math <- map_df(files[1:4],
                    ~vroom(.x,
-                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
 
 setwd(here())
 
 dash_math <- dash_math %>%
     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
-    mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
-    select(-ReportingYear)
+    mutate(reportingyear = if_else(is.na(reporting_year),reportingyear, reporting_year)) %>%
+    select(-reporting_year)
 
 
 
@@ -649,7 +669,7 @@ print(files)
 dash_susp <- map_df(files,
                     ~vroom(.x,
                            col_types = c(reportingyear = "c") ,
-                           .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                           .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                            id = "id"))
 setwd(here())
 
@@ -1157,7 +1177,7 @@ files <- fs::dir_ls( glob = "rsd*")
 
 discipline <- sapply(files,
                read_excel,
-               sheet = 2,
+               sheet = 4,
                skip =1  ,
                .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                simplify=FALSE

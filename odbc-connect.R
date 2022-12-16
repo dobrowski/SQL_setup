@@ -24,9 +24,9 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "SELPAC") %>% 
-  #  filter(Test_Year == "2022") %>%
-  #  head(20) %>%
+headenr <- tbl(con, "ABSENT") %>% 
+    filter(Academic_Year == "2021-22") %>%
+    head(20) %>%
     collect()
 
 
