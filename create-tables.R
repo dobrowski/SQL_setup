@@ -4,6 +4,7 @@ library(tidyverse)
 library(vroom)
 library(here)
 library(readxl)
+library(MCOE)
 
 import_files <- function(dir,globy,naming){
     setwd(dir)
@@ -452,6 +453,8 @@ dash_chronic <- dash_chronic %>%
 copy_to(con, dash_chronic, name = "DASH_CHRONIC",  temporary = FALSE, overwrite = TRUE)
 
 
+tbl(con, "DASH_CHRONIC") %>%
+    count()
 
 
 ####  Dashboard ELA -----  
@@ -1240,7 +1243,6 @@ copy_to(con, dash_all, name = "DASH_ALL",  temporary = FALSE, overwrite = TRUE)
 dash_all2 <- dash_all %>%
   mutate(cds2 = as.numeric(cds))
 
-
 # The code below splits the really big file into smaller chunks 
 # because the SQL server was running out of RAM and not able 
 # to upload the whole dataframe at once.
@@ -1257,6 +1259,35 @@ dbAppendTable(con, value =  d$`4`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`5`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`6`, name = "DASH_ALL")
 dbAppendTable(con, value =  d$`7`, name = "DASH_ALL")
+
+
+
+# Alternative for DASH_ALL,  for now it only does 2022
+
+
+dash_all2022 <- import_files(here("data","dash"),"*22.txt","snake") 
+
+
+dash_all2022 <- dash_all2022 %>%
+    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
+    mutate(studentgroup = replace_na(studentgroup,"EL")) %>%
+    left_join_codebook("DASH_SUSP", "studentgroup") %>%
+    mutate(definition = recode(definition, "Student Group" = "English Learner")) %>% 
+    rename(studentgroup.long = definition) %>%
+    mutate(indicator = str_split_i(YEAR,"download",1))  %>%
+    mutate(statuslevel.orig = statuslevel,
+           statuslevel = case_when(currdenom >= 30  ~ statuslevel.orig,
+                                   currdenom >= 15 & studentgroup %in% c("HOM", "FOS") ~ statuslevel.orig,
+                                   TRUE ~ 0
+           )
+    )
+
+
+
+split_for_sql(chunky = 250000, df = dash_all2022, tablename = "DASH_ALL_2022")
+
+tbl(con,"DASH_ALL_2022") %>%
+    count()
 
 
 ### Stability Rate  -----  
@@ -1303,5 +1334,16 @@ tamo_vroom <- import_files(here("data","tamo"),"tamo*txt","none") %>%
 
 
 copy_to(con, tamo_vroom, name = "Teaching",  temporary = FALSE, overwrite = TRUE)
+
+
+### Public School and Districts ------
+
+# https://www.cde.ca.gov/ds/si/ds/pubschls.asp
+
+school_dir <- vroom(here("data","school_dir","pubschls.txt"))
+
+
+copy_to(con, school_dir, name = "SCHOOL_DIR",  temporary = FALSE, overwrite = TRUE)
+
 
 #### End --------
