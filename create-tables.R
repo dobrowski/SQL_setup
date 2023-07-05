@@ -467,7 +467,7 @@ files <- fs::dir_ls(glob = "ela*txt")
 
 print(files)
 
-dash_ela <- map_df(files[1:4],
+dash_ela <- map_df(files[1:5],
                    ~vroom(.x,
                           .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
@@ -579,7 +579,7 @@ files <- fs::dir_ls(glob = "math*txt")
 
 print(files)
 
-dash_math <- map_df(files[1:4],
+dash_math <- map_df(files[1:5],
                    ~vroom(.x,
                           .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
@@ -884,7 +884,7 @@ split_for_sql(chunky = 250000, df = cast, tablename = "CAST")
 ####  EL Grade and Language -----
 # https://www.cde.ca.gov/ds/ad/fileselsch.asp
 
-el_lang <- import_files(here("data","el-lang"),"els*txt","none") 
+el_lang <- import_files(here("data","el-lang"),"els*txt","snake") 
 
 
 copy_to(con, el_lang, name = "EL_LANG",  temporary = FALSE, overwrite = TRUE)
@@ -895,7 +895,7 @@ copy_to(con, el_lang, name = "EL_LANG",  temporary = FALSE, overwrite = TRUE)
 # https://www.cde.ca.gov/ds/sd/sd/filestkdata.asp
 
 
-tk <- import_files(here("data","tk"),"tk*txt","none") 
+tk <- import_files(here("data","tk"),"tk*txt","snake") 
 
 
 tk <- tk %>%
@@ -1023,7 +1023,7 @@ copy_to(con, courseenroll, name = "STAFF_COURSEENROLL",  temporary = FALSE, over
 
 # Don't work well 
 
-cbeds <- import_files(here("data","cbedsb"),"cbed*txt","none") 
+cbeds <- import_files(here("data","cbedsb"),"cbed*txt","snake") 
 
 
 setwd(here("data","cbedsb"))
@@ -1036,7 +1036,7 @@ print(files)
 cbeds <- map_df(files, ~read.delim(.x,  skipNul = TRUE, cols("ccccccccdd"))) # fileEncoding = 'UTF-16LE'
 
 
-cbeds.temp <- map_df(files[5:9], ~vroom(.x, col_types = "ccccccccdd"))
+cbeds.temp <- map_df(files[5:10], ~vroom(.x, col_types = "ccccccccdd"))
                      
 
 setwd(here())
@@ -1158,13 +1158,13 @@ copy_to(con, stud.support, name = "SARC_STUDENT_SUPPORT",  temporary = FALSE, ov
 # https://www.cde.ca.gov/ds/sd/sd/filesabr.asp
 
 
-absent <- import_files(here("data","absent"),"ab*txt","none") 
+absent <- import_files(here("data","absent"),"ab*txt","snake") 
 
 absent <- absent %>% 
-  mutate(School_Name = iconv(enc2utf8(School_Name),sub="byte"),
+  mutate(school_name = iconv(enc2utf8(school_name),sub="byte"),
      #    ClassID    = iconv(enc2utf8(ClassID),sub="byte")
          ) %>%
-  mutate_at(vars(Eligible_Cumulative_Enrollment:Incomplete_Independent_Study_Absences_count), funs(as.numeric) )
+  mutate_at(vars(eligible_cumulative_enrollment:incomplete_independent_study_absences_count), funs(as.numeric) )
 
 
 copy_to(con, absent, name = "ABSENT",  temporary = FALSE, overwrite = TRUE)
@@ -1276,8 +1276,8 @@ dash_all2022 <- dash_all2022 %>%
     rename(studentgroup.long = definition) %>%
     mutate(indicator = str_split_i(YEAR,"download",1))  %>%
     mutate(statuslevel.orig = statuslevel,
-           statuslevel = case_when(currdenom >= 30  ~ statuslevel.orig,
-                                   currdenom >= 15 & studentgroup %in% c("HOM", "FOS") ~ statuslevel.orig,
+           statuslevel = case_when(currdenom >= 30 ~ statuslevel.orig,
+                                   currdenom >= 15 & studentgroup %in% c("HOM", "FOS") & rtype == "D" ~ statuslevel.orig,
                                    TRUE ~ 0
            )
     )
@@ -1296,17 +1296,26 @@ tbl(con,"DASH_ALL_2022") %>%
 
 
 # temp <- read.delim(here("data","stability","sr1819.txt"), skipNul = TRUE, fileEncoding = 'UTF-16LE')
+# 
+# setwd(here("data","stability"))
+# 
+# files <- fs::dir_ls(glob = "sr*txt")
+# 
+# print(files)
 
-setwd(here("data","stability"))
 
-files <- fs::dir_ls(glob = "sr*txt")
 
-print(files)
+stability <- import_files(here("data","stability"),"sr*txt","snake") %>%
+    mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
 
-#  Can't use vroom because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
-stability <- map_df(files, ~read.delim(.x,  skipNul = TRUE, fileEncoding = 'UTF-16LE'))
-
-setwd(here())
+#  Can't use vroom for first three years because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
+# stability <- map_df(files, ~read.delim(.x,
+#                                        skipNul = TRUE,
+#                                        fileEncoding = 'UTF-16LE'
+#                                        )
+#                     )
+# 
+# setwd(here())
 
 
 
@@ -1317,7 +1326,7 @@ copy_to(con, stability, name = "STABILITY",  temporary = FALSE, overwrite = TRUE
 # https://www.cde.ca.gov/ds/ad/filesfepsch.asp
 
 
-fep_vroom <- import_files(here("data","fep"),"fep*txt","none") 
+fep_vroom <- import_files(here("data","fep"),"fep*txt","snake") 
 
 
 
@@ -1340,7 +1349,9 @@ copy_to(con, tamo_vroom, name = "Teaching",  temporary = FALSE, overwrite = TRUE
 
 # https://www.cde.ca.gov/ds/si/ds/pubschls.asp
 
-school_dir <- vroom(here("data","school_dir","pubschls.txt"))
+school_dir <- vroom(here("data","school_dir","pubschls.txt"),
+                    .name_repair = ~ janitor::make_clean_names(., case = "snake")
+                    )
 
 
 copy_to(con, school_dir, name = "SCHOOL_DIR",  temporary = FALSE, overwrite = TRUE)
