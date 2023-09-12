@@ -122,8 +122,9 @@ elas <- elas_vroom %>%
     mutate(YEAR = str_extract(str_remove(YEAR,"-"),"[:digit:]+"))
 
 
-
+DBI::dbRemoveTable(con, "ELAS")
 copy_to(con, elas, name = "ELAS",  temporary = FALSE, overwrite = TRUE)
+# split_for_sql(chunky = 250000, df = elas, tablename = "ELAS")
 
 
 ####  FRPM  ----
@@ -185,10 +186,9 @@ copy_to(con, upc, name = "UPC",  temporary = FALSE, overwrite = TRUE)
 cgr <- import_files(here("data","cgr"),"cgr*txt","none") %>%
   mutate_at(vars(High_School_Completers:Enrolled_Out_of_State_2_Year_College_Public_Private_12_Months), funs(as.numeric) )
 
+# copy_to(con, cgr, name = "CGR",  temporary = FALSE, overwrite = TRUE)
 
-copy_to(con, cgr, name = "CGR",  temporary = FALSE, overwrite = TRUE)
-
-
+DBI::dbRemoveTable(con, "CGR")
 split_for_sql(chunky = 250000, df = cgr, tablename = "CGR")
 
 
@@ -1342,7 +1342,17 @@ tamo_vroom <- import_files(here("data","tamo"),"tamo*txt","none") %>%
 
 
 
-copy_to(con, tamo_vroom, name = "Teaching",  temporary = FALSE, overwrite = TRUE)
+copy_to(con, tamo_vroom, name = "TEACHING2",  temporary = FALSE, overwrite = TRUE)
+
+tamo_vroom2 <- tamo_vroom %>%
+    head(1000)
+
+DBI::dbRemoveTable(con, "TEACHING")
+copy_to(con, tamo_vroom2, name = "TEACHING2",  temporary = FALSE, overwrite = TRUE)
+
+
+split_for_sql(chunky = 250000, df = tamo_vroom, tablename = "TEACHING")
+
 
 
 ### Public School and Districts ------
@@ -1355,6 +1365,9 @@ school_dir <- vroom(here("data","school_dir","pubschls.txt"),
 
 
 copy_to(con, school_dir, name = "SCHOOL_DIR",  temporary = FALSE, overwrite = TRUE)
+
+DBI::dbRemoveTable(con, "SCHOOL_DIR2")
+copy_to(con, school_dir, name = "SCHOOL_DIR2",  temporary = FALSE, overwrite = TRUE)
 
 
 #### End --------

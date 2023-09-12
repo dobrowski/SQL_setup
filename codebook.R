@@ -54,5 +54,5 @@ get_column_names_into_sheet <- function(col){
 }
 
 
-get_column_names_into_sheet("SCHOOLS")
+get_column_names_into_sheet("TEACHING")
 

@@ -8,6 +8,8 @@ library(keyring)
 
 con <- dbConnect(odbc(), 
                  Driver = "ODBC Driver 17 for SQL Server", 
+  #  Driver =  "/usr/local/lib/libmsodbcsql.18.dylib",
+  # Driver = "/usr/local/Cellar/mssql-tools/17.10.1.1"
                  Server = "sql-prod-02.mcoe.monterey.k12.ca.us", 
                  Database = "Ed_Services_Data", 
                  UID      = key_get("sql username"),
@@ -35,10 +37,14 @@ headenr <- tbl(con, "RECLASS") %>%
     collect()
 
 
-headenr <- tbl(con, "CHRONIC") %>% 
-    filter(YEAR == "chrabs2021.txt",
-           CountyCode == "27",
-           CharterYN == "No") 
+headenr <- tbl(con, "ELAS") %>% 
+    filter(YEAR == "2223",
+           # CountyCode == "27",
+           # CharterYN == "No"
+           ) %>%
+    head(200) %>%
+    collect()
+
 
 
 
