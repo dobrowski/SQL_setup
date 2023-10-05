@@ -262,12 +262,15 @@ grad5 <- grad5  %>%
   # select(-ReportingYear) %>%
   mutate_at(vars(cohort_students:dropout_rate), funs(as.numeric) ) 
 
-copy_to(con, grad5, name = "GRAD_FIVE",  temporary = FALSE, overwrite = TRUE)
+copy_to(con, grad5, name = "GRAD_5",  temporary = FALSE, overwrite = TRUE)
 
 
 tbl(con,"GRAD_FIVE") %>%
     count()
 
+
+DBI::dbRemoveTable(con, "SCHOOL_DIR2")
+copy_to(con, school_dir, name = "SCHOOL_DIR2",  temporary = FALSE, overwrite = TRUE)
 
 
 ####  Reclassification  -----  
@@ -737,6 +740,8 @@ caaspp <- bind_rows(caaspp2,caaspp21)
 
 # caaspp <- import_files_caret(here("data","caaspp"),"sb*txt","none",5)
 
+
+DBI::dbRemoveTable(con, "CAASPP")
 
 split_for_sql(chunky = 250000, df = caaspp, tablename = "CAASPP")
 
