@@ -291,7 +291,23 @@ files <- fs::dir_ls(glob = "chr*txt")
 
 print(files)
 
-chronic <- map_df(files, ~vroom(.x, col_types = "ccccccccccddd" ,.name_repair = ~ janitor::make_clean_names(., case = "snake"), id = "YEAR"))
+
+chronic.new <- map_df(files[5:6], ~vroom(.x, 
+                                col_types = "cccccccccccddd" ,
+                                .name_repair = ~ janitor::make_clean_names(., case = "snake"),
+                                id = "YEAR")
+)
+
+
+chronic.old <- map_df(files[1:4], ~vroom(.x, 
+                                col_types = "ccccccccccddd" ,
+                                .name_repair = ~ janitor::make_clean_names(., case = "snake"),
+                                id = "YEAR")
+                  )
+
+
+chronic <- bind_rows(chronic.new, chronic.old)
+
 
 setwd(here())
 
@@ -306,15 +322,22 @@ chronic <- chronic  %>%
          #CountyName = if_else(is.na(CountyName),County_Name,CountyName),
          #DistrictName = if_else(is.na(DistrictName),District_Name,DistrictName),
          #SchoolName = if_else(is.na(SchoolName),School_Name,SchoolName),
-      charter_yn = if_else(is.na(charter_yn),charter_school,charter_yn),
+      charter_school = if_else(is.na(charter_yn),charter_school,charter_yn),
          #ReportingCategory = if_else(is.na(ReportingCategory),Reporting_Category,ReportingCategory),
   ) %>%
-  select(YEAR:chronic_absenteeism_eligible_cumulative_enrollment) %>%
+#  select(YEAR:chronic_absenteeism_eligible_cumulative_enrollment) %>%
 #    mutate_at(vars(ChronicAbsenteeismEligibleCumula:ChronicAbsenteeismRate ), funs(as.numeric) )  %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
 
 
-copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
+
+DBI::dbRemoveTable(con, "CHRONIC")
+
+split_for_sql(chunky = 250000, df = chronic, tablename = "CHRONIC")
+
+
+
+# copy_to(con, chronic, name = "CHRONIC",  temporary = FALSE, overwrite = TRUE)
 
 
 tbl(con,"CHRONIC") %>%
@@ -1172,7 +1195,12 @@ absent <- absent %>%
   mutate_at(vars(eligible_cumulative_enrollment:incomplete_independent_study_absences_count), funs(as.numeric) )
 
 
-copy_to(con, absent, name = "ABSENT",  temporary = FALSE, overwrite = TRUE)
+
+DBI::dbRemoveTable(con, "ABSENT")
+
+split_for_sql(chunky = 250000, df = absent, tablename = "ABSENT")
+
+# copy_to(con, absent, name = "ABSENT",  temporary = FALSE, overwrite = TRUE)
 
 ### Restraint and Seculsion  -----  
 # https://www.cde.ca.gov/ds/sd/sd/filesrsd.asp
