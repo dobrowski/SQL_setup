@@ -26,14 +26,15 @@ con <- dbConnect(odbc(),
 
 
 
-headenr <- tbl(con, "RECLASS") %>% 
-    filter(District == "Chualar Union",
+headenr <- tbl(con, "DASH_MATH") %>% 
+ #   filter(#District == "Chualar Union",
     #       charter_school == "No",
+        
     #       dass == "No",
      #      reporting_category == "TA"
-    ) %>%
-  #  filter(academic_year == "2021-22") %>%
-    head(200) %>%
+#    ) %>%
+    filter(reportingyear == max(reportingyear)) %>%
+    head(20) %>%
     collect()
 
 

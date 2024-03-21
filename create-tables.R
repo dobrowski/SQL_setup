@@ -105,6 +105,7 @@ cenr <- cenr_vroom %>%
 
 
 
+DBI::dbRemoveTable(con, "CENROLLMENT")
 copy_to(con, cenr, name = "CENROLLMENT",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -116,7 +117,7 @@ tbl(con,"CENROLLMENT") %>%
 ####  ELA Status and LTELS  -----
 # https://www.cde.ca.gov/ds/ad/filesltel.asp
 
-elas_vroom <- import_files(here("data","elas"),"Lte*txt","none") 
+elas_vroom <- import_files(here("data","elas"),"Lte*txt","snake") 
 
 elas <- elas_vroom %>%
     mutate(YEAR = str_extract(str_remove(YEAR,"-"),"[:digit:]+"))
@@ -198,7 +199,8 @@ split_for_sql(chunky = 250000, df = cgr, tablename = "CGR")
 
 exp <- import_files(here("data","exp"),"exp*txt","snake") 
 
-exp <- exp %>%
+exp <- exp  %>%
+    select(-errata_flag_y_n, -x_2, -x_3, -x_4, -x) %>%
     mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn),
            expulsion_count_defiance_only = if_else(is.na(expulsion_count_defiance_only),expulsion_count_of_students_expelled_defiance_only,expulsion_count_defiance_only)
            ) %>%
@@ -208,7 +210,19 @@ exp <- exp %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
   mutate_at(vars(cumulative_enrollment:expulsion_count_other_reasons,expulsion_count_defiance_only), funs(as.numeric) )
 
+
+
+DBI::dbRemoveTable(con, "EXP")
+
 copy_to(con, exp, name = "EXP",  temporary = FALSE, overwrite = TRUE)
+
+
+
+
+tbl(con, "EXP") %>%
+    count()
+
+
 
 
 ####  Suspensions  -----
@@ -216,7 +230,9 @@ copy_to(con, exp, name = "EXP",  temporary = FALSE, overwrite = TRUE)
 
 susp <- import_files(here("data","susp"),"susp*txt","snake") 
 
+
 susp <- susp  %>%
+    select(-errata_flag_y_n, -x_2, -x_3, -x_4, -x) %>%
     mutate(charter_yn = if_else(is.na(charter_yn),charter_y_n,charter_yn),
            suspension_count_defiance_only = if_else(is.na(suspension_count_defiance_only),suspension_count_of_students_suspended_defiance_only,suspension_count_defiance_only)
            ) %>%
@@ -224,10 +240,23 @@ susp <- susp  %>%
   select(-suspension_count_of_students_suspended_defiance_only) %>%
     mutate(charter_yn = recode(charter_yn, Y = "Yes", N = "No")) %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte")) %>%
+    mutate(district_name = iconv(enc2utf8(school_name),sub="byte")) %>%
+    
   mutate_at(vars(cumulative_enrollment:suspension_count_other_reasons,suspension_count_defiance_only), funs(as.numeric) )
 
 
+
+DBI::dbRemoveTable(con, "SUSP")
 copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
+
+split_for_sql(chunky = 2000, df = susp, tablename = "SUSP")
+
+
+
+
+
+tbl(con, "SUSP") %>%
+    count()
 
 
 
@@ -236,13 +265,15 @@ copy_to(con, susp, name = "SUSP",  temporary = FALSE, overwrite = TRUE)
 
 grad4 <- import_files(here("data","grad4"),"acg*txt","snake") 
 
-grad4 <- grad4  %>%
-  mutate_at(vars(cohort_students:still_enrolled_rate), funs(as.numeric) ) 
+grad4 <- grad4   %>%
+    select(-x_2, -x_3, -x)%>%
+  mutate_at(vars(cohort_students:still_enrolled_rate), list(as.numeric) ) 
 
 
 
 # copy_to(con, grad4, name = "GRAD_FOUR",  temporary = FALSE, overwrite = TRUE)
 
+DBI::dbRemoveTable(con, "GRAD_FOUR")
 
 split_for_sql(chunky = 250000, df = grad4, tablename = "GRAD_FOUR")
 
@@ -262,10 +293,13 @@ grad5 <- grad5  %>%
   # select(-ReportingYear) %>%
   mutate_at(vars(cohort_students:dropout_rate), funs(as.numeric) ) 
 
+
+
+DBI::dbRemoveTable(con, "GRAD_5")
 copy_to(con, grad5, name = "GRAD_5",  temporary = FALSE, overwrite = TRUE)
 
 
-tbl(con,"GRAD_FIVE") %>%
+tbl(con,"GRAD_5") %>%
     count()
 
 
@@ -430,14 +464,14 @@ print(files)
 dash_cci <- map_df(files,
                    ~vroom(.x,
                           col_types = c(reportingyear = "c") ,
-                          .name_repair = ~ janitor::make_clean_names(., case = "none"),
+                          .name_repair = ~ janitor::make_clean_names(., case = "snake"),
                           id = "id"))
 
 setwd(here())
 
 
+DBI::dbRemoveTable(con, "DASH_CCI")
 copy_to(con, dash_cci, name = "DASH_CCI",  temporary = FALSE, overwrite = TRUE)
-
 
 
 
@@ -461,6 +495,7 @@ dash_census <- dash_census %>%
   select(YEAR:reportingyear)
 
 
+DBI::dbRemoveTable(con, "DASH_CENSUS")
 copy_to(con, dash_census, name = "DASH_CENSUS",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -476,6 +511,8 @@ dash_chronic <- import_files(here("data","dash"),"chr*txt","none")
 dash_chronic <- dash_chronic %>%
     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
 
+
+DBI::dbRemoveTable(con, "DASH_CHRONIC")
 copy_to(con, dash_chronic, name = "DASH_CHRONIC",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -508,29 +545,31 @@ dash_ela <- dash_ela %>%
 
 
 
+DBI::dbRemoveTable(con, "DASH_ELA")
 copy_to(con, dash_ela, name = "DASH_ELA",  temporary = FALSE, overwrite = TRUE)
 
 
+tbl(con, "DASH_ELA") %>%
+    count()
 
 
 ####  Dashboard ELA Participation -----  
 # https://www.cde.ca.gov/ta/ac/cm/
 
-
-dash_ela_part <- import_files(here("data","dash"),"elap*txt","none") 
-
-
-dash_ela_part <- dash_ela_part %>%
-    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
-
-copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrite = TRUE)
-
+#. Historic only, now included in the ELA file
+# 
+# dash_ela_part <- import_files(here("data","dash"),"elap*txt","none") 
+# 
+# 
+# dash_ela_part <- dash_ela_part %>%
+#     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+# 
+# copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrite = TRUE)
+# 
 
 
 ####  Dashboard ELPI -----  
 # https://www.cde.ca.gov/ta/ac/cm/
-
-#  ELPI has been done differently every year, so it is not being included for now since the data files are inconsistent
 
 # 
 # dash_elpi <- vroom(here("data","dash","elpi*.txt") ) %>%
@@ -539,30 +578,9 @@ copy_to(con, dash_ela_part, name = "DASH_ELA_PART",  temporary = FALSE, overwrit
 
 dash_elpi <- import_files(here("data","dash"),"elpi*txt","snake") %>%
        mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
-# 
-# 
-# 
-# setwd(here("data","dash"))
-# 
-# files <- fs::dir_ls(glob = "elpi*txt")
-# 
-# print(files)
-# 
-# dash_elpi <- map_df(files[1:4],
-#                    ~vroom(.x,
-#                           .name_repair = ~ janitor::make_clean_names(., case = "none"),
-#                           id = "id"))
-# 
-# setwd(here())
-# 
-# dash_ela <- dash_ela %>%
-#   mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
-#   mutate(reportingyear = if_else(is.na(ReportingYear),reportingyear,as.character( ReportingYear))) %>%
-#   select(-ReportingYear)
-# 
-# 
-# 
- 
+
+
+DBI::dbRemoveTable(con, "DASH_ELPI")
  copy_to(con, dash_elpi, name = "DASH_ELPI",  temporary = FALSE, overwrite = TRUE)
  
  
@@ -591,6 +609,9 @@ setwd(here())
 dash_grad <- dash_grad %>%
     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
 
+
+
+DBI::dbRemoveTable(con, "DASH_GRAD")
 copy_to(con, dash_grad, name = "DASH_GRAD",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -620,6 +641,7 @@ dash_math <- dash_math %>%
 
 
 
+DBI::dbRemoveTable(con, "DASH_MATH")
 copy_to(con, dash_math, name = "DASH_MATH",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -628,13 +650,15 @@ copy_to(con, dash_math, name = "DASH_MATH",  temporary = FALSE, overwrite = TRUE
 # https://www.cde.ca.gov/ta/ac/cm/
 
 
-dash_math_part <- import_files(here("data","dash"),"mathp*txt","none") 
+#. Historic only, now included in the ELA file
 
-
-dash_math_part <- dash_math_part %>%
-    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
-
-copy_to(con, dash_math_part, name = "DASH_MATH_PART",  temporary = FALSE, overwrite = TRUE)
+# dash_math_part <- import_files(here("data","dash"),"mathp*txt","none") 
+# 
+# 
+# dash_math_part <- dash_math_part %>%
+#     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+# 
+# copy_to(con, dash_math_part, name = "DASH_MATH_PART",  temporary = FALSE, overwrite = TRUE)
 
 
 
@@ -706,6 +730,9 @@ setwd(here())
 
 dash_susp <- dash_susp %>%
     mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte"))
+
+
+DBI::dbRemoveTable(con, "DASH_SUSP")
 
 copy_to(con, dash_susp, name = "DASH_SUSP",  temporary = FALSE, overwrite = TRUE)
 
@@ -904,6 +931,12 @@ cast <- import_files_caret(here("data","cast"),"cast*txt","none",1)  %>%
     )  %>% 
   mutate_at(vars(starts_with("Total"), CAST_Reported_Enrollment:Earth_and_Space_Sciences_Domain_Percent_Above_Standard),
             funs(as.numeric) ) 
+
+
+
+
+DBI::dbRemoveTable(con, "CAST")
+
 
 split_for_sql(chunky = 250000, df = cast, tablename = "CAST")
 
@@ -1230,6 +1263,9 @@ discipline <- discipline %>%
   mutate_at(vars(count_of_mechanical_restraints:unduplicated_count_of_students_secluded), funs(as.numeric) )
 
 
+
+
+DBI::dbRemoveTable(con, "DISCIP")
 copy_to(con, discipline, name = "DISCIP",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -1295,32 +1331,54 @@ dbAppendTable(con, value =  d$`7`, name = "DASH_ALL")
 
 
 
-# Alternative for DASH_ALL,  for now it only does 2022
+# Alternative for DASH_ALL,  for now it only does 2022 and 2023.  
+# Note Local Priority indicators not included
 
 
-dash_all2022 <- import_files(here("data","dash"),"*22.txt","snake") 
+dash_all2022 <- import_files(here("data","dash"),"*22.txt","snake")  %>%
+    mutate(indicator = str_sub(YEAR, 1, 3),
+           indicator = case_when(indicator == "cen" ~ "CENSUS",
+                                 indicator == "cci" ~ "CCI",
+                                 indicator == "ela" ~ "ELA",
+                                 indicator == "chr" ~ "CHRO",
+                                 indicator == "mat" ~ "MATH",
+                                 indicator == "sus" ~ "SUSP",
+                                 indicator == "gra" ~ "GRAD",
+                                 indicator == "elp" ~ "ELPI"
+                                 ))
 
+dash_all2023 <- import_files(here("data","dash"),"*23.txt","snake") #%>%
+   # mutate(num_materials = as.character(num_materials))
 
-dash_all2022 <- dash_all2022 %>%
-    mutate(schoolname = iconv(enc2utf8(schoolname),sub="byte")) %>%
+dash_all <- dash_all2022 %>%
+    bind_rows(dash_all2023) %>% 
+    mutate(across(c(schoolname ), # ,lea, num_misassignments,additional_info) , # remove weird characters across mutliple columns
+                   ~iconv(enc2utf8(.x),sub="byte")
+                  )
+           ) %>%
+    rename(file = YEAR) %>%
     mutate(studentgroup = replace_na(studentgroup,"EL")) %>%
     left_join_codebook("DASH_SUSP", "studentgroup") %>%
     mutate(definition = recode(definition, "Student Group" = "English Learner")) %>% 
-    rename(studentgroup.long = definition) %>%
-    mutate(indicator = str_split_i(YEAR,"download",1))  %>%
-    mutate(statuslevel.orig = statuslevel,
-           statuslevel = case_when(currdenom >= 30 ~ statuslevel.orig,
-                                   currdenom >= 15 & studentgroup %in% c("HOM", "FOS") & rtype == "D" ~ statuslevel.orig,
-                                   TRUE ~ 0
-           )
-    )
+    rename(studentgroup.long = definition) # %>%
+    # mutate(indicator = str_split_i(YEAR,"download",1))  %>%
+    # mutate(statuslevel.orig = statuslevel,
+    #        statuslevel = case_when(currdenom >= 30 ~ statuslevel.orig,
+    #                                currdenom >= 15 & studentgroup %in% c("HOM", "FOS") & rtype == "D" ~ statuslevel.orig,
+    #                                TRUE ~ 0
+    #        )
+    # )
 
 
 
-split_for_sql(chunky = 250000, df = dash_all2022, tablename = "DASH_ALL_2022")
+DBI::dbRemoveTable(con, "DASH_ALL")
 
-tbl(con,"DASH_ALL_2022") %>%
+split_for_sql(chunky = 2500, df = dash_all, tablename = "DASH_ALL")
+
+tbl(con,"DASH_ALL") %>%
     count()
+
+
 
 
 ### Stability Rate  -----  
@@ -1329,16 +1387,19 @@ tbl(con,"DASH_ALL_2022") %>%
 
 
 # temp <- read.delim(here("data","stability","sr1819.txt"), skipNul = TRUE, fileEncoding = 'UTF-16LE')
-# 
-# setwd(here("data","stability"))
-# 
-# files <- fs::dir_ls(glob = "sr*txt")
-# 
-# print(files)
+
+setwd(here("data","stability"))
+
+files <- fs::dir_ls(glob = "sr*txt")
+
+print(files)
+
+stability <- map_df(files, ~vroom(.x, col_types = "ccccccccccccccccc" , .name_repair = ~ janitor::make_clean_names(., case = "snake"), id = "YEAR"))
+
+setwd(here())
 
 
-
-stability <- import_files(here("data","stability"),"sr*txt","snake") %>%
+stability <- stability %>%
     mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
 
 #  Can't use vroom for first three years because of the null encodings.  See https://githubmemory.com/repo/r-lib/vroom/issues/340
@@ -1352,6 +1413,7 @@ stability <- import_files(here("data","stability"),"sr*txt","snake") %>%
 
 
 
+DBI::dbRemoveTable(con, "STABILITY")
 copy_to(con, stability, name = "STABILITY",  temporary = FALSE, overwrite = TRUE)
 
 
@@ -1401,6 +1463,18 @@ copy_to(con, school_dir, name = "SCHOOL_DIR",  temporary = FALSE, overwrite = TR
 
 DBI::dbRemoveTable(con, "SCHOOL_DIR2")
 copy_to(con, school_dir, name = "SCHOOL_DIR2",  temporary = FALSE, overwrite = TRUE)
+
+
+### Homeless ----
+
+# https://www.cde.ca.gov/ds/ad/fileshse.asp
+
+homeless <- import_files(here("data","homeless"),"hs*txt","snake") %>%
+    mutate(school_name = iconv(enc2utf8(school_name),sub="byte"))
+
+DBI::dbRemoveTable(con, "HOMELESS")
+copy_to(con, homeless, name = "HOMELESS",  temporary = FALSE, overwrite = TRUE)
+
 
 
 #### End --------
